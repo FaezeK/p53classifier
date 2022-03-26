@@ -5,6 +5,7 @@ import p53
 import process_expr
 import process_mut
 import p53_hyperparam as p53hp
+import make_pca
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import StratifiedKFold
@@ -19,6 +20,7 @@ pog_snv = pd.read_csv('POG_small_mutations.txt', delimiter='\t', header=0)
 tcga_snv = pd.read_csv('mc3.v0.2.8.PUBLIC.txt', delimiter='\t', header=0)
 
 pog_genes = pd.read_csv('pog_genes_rpkm.txt', delimiter = '\t', header=0)
+pog_meta = pd.read_csv('pog_cohort_details.txt', delimiter = '\t', header=0)
 tss = pd.read_csv('tissueSourceSite.tsv', delimiter='\t', header=0)
 print('The input files have been read')
 print('')
@@ -32,6 +34,22 @@ pog_snv = process_POG_mut(pog_snv)
 tcga_snv = process_TCGA_mut(tcga_snv)
 
 print('Data preprocessing is done . . .')
+print('')
+print('Making PCA plots . . .')
+print('')
+
+pog_meta_fltrd = pog_meta[['ID','PRIMARY SITE']]
+pog_meta_fltrd = pog_meta_fltrd.rename(columns={'ID':'sample_id'})
+
+make_pca.generate_PCA(pog_tpm_trnspsd, pog_meta_fltrd, 'POG')
+
+tcga_type_df = make_pca.extract_tcga_types(tcga_expr, tcga_meta)
+
+make_pca.generate_PCA(tcga_actual_tpm_ucsc, tcga_type_df, 'TCGA')
+
+make_pca.generate_PCA_merged(tcga_actual_tpm_ucsc, pog_tpm_trnspsd)
+
+print('PCA plots are made . . .')
 print('')
 
 # make X and y matrices
