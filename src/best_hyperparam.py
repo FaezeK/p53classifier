@@ -1,3 +1,8 @@
+############################################################################
+# This script contains the code for hyperparameter tuning for the POG,
+# TCGA, and the merged datasets
+############################################################################
+
 import pandas as pd
 import numpy as np
 import timeit

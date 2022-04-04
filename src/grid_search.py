@@ -1,10 +1,9 @@
-import numpy as np
-import pandas as pd
-import os
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+############################################################################
+# This script contains the code to perform a grid search to find the most
+# suitable hyperparameter values for a given dataset
+############################################################################
+
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import GridSearchCV
 from sklearn.model_selection import StratifiedKFold
 
@@ -25,11 +24,6 @@ param_space = {
 
 def findHyperparam(X, y):
     grid = GridSearchCV(estimator=clf, param_grid=param_space, n_jobs=n_jobs, cv=StratifiedKFold(n_splits=n_splits, shuffle=True))
-    ###########################################
-    ##### to change score for estimation: #####
-    ###########################################
-    # grid = GridSearchCV(estimator=clf, scoring = 'roc_auc', param_grid=param_space, n_jobs=n_jobs, cv=StratifiedKFold(n_splits=n_splits, shuffle=True))
-    ###########################################
-    # grid = GridSearchCV(estimator=clf, param_grid=param_space, scoring=make_scorer(accuracy_score), n_jobs=n_jobs, cv=cv)
+
     grid_result = grid.fit(X, y)
     return grid_result
