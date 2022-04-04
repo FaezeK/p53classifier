@@ -12,22 +12,24 @@ from sklearn.model_selection import StratifiedKFold
 
 start_time = timeit.default_timer()
 
-# input datasets
+# read expression datasets
 pog_tpm = pd.read_csv('POG_TPM_matrix.txt', delimiter = '\t', header=0)
 tcga_tpm = pd.read_csv('tcga_rsem_gene_tpm.txt', delimiter='\t', header=0)
 
+# read mutation datasets
 pog_snv = pd.read_csv('POG_small_mutations.txt', delimiter='\t', header=0)
 tcga_snv = pd.read_csv('mc3.v0.2.8.PUBLIC.txt', delimiter='\t', header=0)
 
-pog_genes = pd.read_csv('pog_genes_rpkm.txt', delimiter = '\t', header=0)
-pog_meta = pd.read_csv('pog_cohort_details.txt', delimiter = '\t', header=0)
-tss = pd.read_csv('tissueSourceSite.tsv', delimiter='\t', header=0)
+# read metadata
+common_genes = pd.read_csv('common_genes.txt', delimiter = '\t', header=0) # list of common genes between POG and TCGA datasets
+pog_meta = pd.read_csv('pog_cohort_details.txt', delimiter = '\t', header=0) # POG metadata
+tss = pd.read_csv('tissueSourceSite.tsv', delimiter='\t', header=0) # TCGA metadata
 print('The input files have been read')
 print('')
 
 # process expr data
-pog_tpm_trnspsd, pog_tpm_fltrd_genes = process_expr.process_POG_expr(pog_tpm, pog_genes)
-tcga_actual_tpm_ucsc = process_expr.process_TCGA_expr(tcga_tpm, pog_genes, pog_tpm_fltrd_genes)
+pog_tpm_trnspsd, pog_tpm_fltrd_genes = process_expr.process_POG_expr(pog_tpm, common_genes)
+tcga_actual_tpm_ucsc = process_expr.process_TCGA_expr(tcga_tpm, common_genes, pog_tpm_fltrd_genes)
 
 # process mutation data
 pog_snv = process_POG_mut(pog_snv)
@@ -38,9 +40,11 @@ print('')
 print('Making PCA plots . . .')
 print('')
 
+# process metadata
 pog_meta_fltrd = pog_meta[['ID','PRIMARY SITE']]
 pog_meta_fltrd = pog_meta_fltrd.rename(columns={'ID':'sample_id'})
 
+# generate PCA plots
 make_pca.generate_PCA(pog_tpm_trnspsd, pog_meta_fltrd, 'POG')
 
 tcga_type_df = make_pca.extract_tcga_types(tcga_expr, tcga_meta)
@@ -68,15 +72,16 @@ both_X_train, both_X_test, both_y_train, both_y_test = p53.split_90_10(both_feat
 print('feature matrices and label arrays are ready!')
 print('')
 
+# find the hyperparameters resulting in the best performance in a CV analysis
 tcga_grid_result = p53hp.findHyperparam(tcga_X_train, tcga_y_train)
 pog_grid_result = p53hp.findHyperparam(pog_X_train, pog_y_train)
 both_grid_result = p53hp.findHyperparam(both_X_train, both_y_train)
 
-################
-### Test POG ###
-################
+##################################################################################
+### Write the Grid Search results for POG to a file and test on validation set ###
+##################################################################################
 
-f = open('pog_hyper_param_results.txt', 'w')
+f = open('res/pog_hyper_param_results.txt', 'w')
 print('best score:', file=f)
 print(pog_grid_result.best_score_, file=f)
 print('', file=f)
@@ -113,11 +118,11 @@ pog_p53_pred_df2 = pd.DataFrame({'expr_sa_ids':pog_sample_ids, 'p53_status':pog_
 
 print(classification_report(pog_p53_pred_df2.p53_status, pog_p53_pred_df2.predict), file=f)
 
-#################
-### Test TCGA ###
-#################
+###################################################################################
+### Write the Grid Search results for TCGA to a file and test on validation set ###
+###################################################################################
 
-f2 = open('tcga_hyper_param_results.txt', 'w')
+f2 = open('res/tcga_hyper_param_results.txt', 'w')
 print('best score:', file=f2)
 print(tcga_grid_result.best_score_, file=f2)
 print('', file=f2)
@@ -154,11 +159,11 @@ tcga_p53_pred_df2 = pd.DataFrame({'expr_sa_ids':tcga_sample_ids, 'p53_status':tc
 
 print(classification_report(tcga_p53_pred_df2.p53_status, tcga_p53_pred_df2.predict), file=f2)
 
-#################
-### Test both ###
-#################
+###################################################################################
+### Write the Grid Search results for both to a file and test on validation set ###
+###################################################################################
 
-f3 = open('both_hyper_param_results.txt', 'w')
+f3 = open('res/both_hyper_param_results.txt', 'w')
 print('best score:', file=f3)
 print(both_grid_result.best_score_, file=f3)
 print('', file=f3)

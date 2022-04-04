@@ -1,0 +1,27 @@
+best score:
+0.7519480519480519
+
+best params:
+{'max_depth': 100, 'max_features': 0.05, 'max_samples': 0.99, 'min_samples_leaf': 1, 'min_samples_split': 50, 'n_estimators': 50}
+
+Test validation set:
+1.0
+              precision    recall  f1-score   support
+
+     p53_mut       0.69      0.43      0.53        21
+      p53_wt       0.71      0.88      0.79        34
+
+    accuracy                           0.71        55
+   macro avg       0.70      0.66      0.66        55
+weighted avg       0.71      0.71      0.69        55
+
+Validation set results with clf default params:
+1.0
+              precision    recall  f1-score   support
+
+     p53_mut       0.58      0.33      0.42        21
+      p53_wt       0.67      0.85      0.75        34
+
+    accuracy                           0.65        55
+   macro avg       0.63      0.59      0.59        55
+weighted avg       0.64      0.65      0.63        55
