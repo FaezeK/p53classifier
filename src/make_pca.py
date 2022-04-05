@@ -3,6 +3,12 @@
 # and POG data sets as well as the merged set of all samples.
 ############################################################################
 
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
+
 def extract_tcga_types(tcga_expr, tcga_meta):
     tcga_sample_ids = tcga_expr.sample_id
     tcga_type=[]
@@ -11,7 +17,7 @@ def extract_tcga_types(tcga_expr, tcga_meta):
         st_ind = i.find('-')
         end_ind = i.find('-',(i.find('-')+1))
         code = i[st_ind+1 : end_ind]
-        t_type = tss[tss['TSS Code']==code]['Study Name'].to_string(index=False)
+        t_type = tcga_meta[tcga_meta['TSS Code']==code]['Study Name'].to_string(index=False)
         tcga_type.append(t_type)
 
         tcga_type_df = pd.DataFrame({'sample_id':tcga_sample_ids, 'type':tcga_type})
@@ -48,6 +54,7 @@ def generate_PCA_merged(tcga_expr, pog_expr):
 
     # merge two datasets
     both_tpm_log2 = pd.concat([tcga_tpm_log2, pog_tpm_log2], axis=0)
+    pca = PCA(n_components=2)
     both_principalComponents = pca.fit_transform(both_tpm_log2)
 
     both_principalDf = pd.DataFrame(data = both_principalComponents, columns = ['pc1', 'pc2'], index=both_tpm_log2.index)
