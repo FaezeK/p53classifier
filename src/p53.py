@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
+import sklearn.metrics
 import p53_helper as p53h
 import five_fold_cv as fcv
 import oob
@@ -33,7 +34,7 @@ pog_tpm_p53_impactful_mut, pog_tpm_p53_not_impact_mut, pog_tpm_p53_wt = p53h.fin
 
 tcga_feature_matrix, tcga_p53_labels = p53h.make_X_y(tcga_tpm_impactful_p53_mut, tcga_tpm_wt_p53, 'p53_mut', 'p53_wt')
 pog_feature_matrix, pog_p53_labels = p53h.make_X_y(pog_tpm_p53_impactful_mut, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
-both_feature_matrix, both_p53_labels = p53h.make_X_y_merged(tcga_tpm_impactful_p53_mut, pog_tpm_p53_impactful_mut, tcga_tpm_wt_p53, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
+merged_feature_matrix, merged_p53_labels = p53h.make_X_y_merged(tcga_tpm_impactful_p53_mut, pog_tpm_p53_impactful_mut, tcga_tpm_wt_p53, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
 
 ###############################################################################################
 ###############################################################################################
@@ -59,6 +60,9 @@ axes[0,1].set_title("AUPRC", fontsize=fnt_size)
 
 axes[0,0].text(-0.45, 0.5,'TCGA', fontsize=fnt_size)
 
+tcga_auprc = sklearn.metrics.average_precision_score(tcga_all_pred_df.p53_status, tcga_true_label_prob, pos_label="p53_wt")
+tcga_auroc = sklearn.metrics.roc_auc_score(tcga_all_pred_df.p53_status, tcga_true_label_prob)
+
 axes[0,0].text(0.20, 0.60, 'AUROC='+str(round(tcga_auroc, 2)))
 axes[0,1].text(0.50, 0.60, 'AUPRC='+str(round(tcga_auprc, 2)))
 
@@ -67,6 +71,9 @@ fcv.generate_auprc_curve(pog_all_pred_df.p53_status, pog_true_label_prob, axes[1
 
 axes[1,0].text(-0.45, 0.5,'POG', fontsize=fnt_size)
 
+pog_auprc = sklearn.metrics.average_precision_score(pog_all_pred_df.p53_status, pog_true_label_prob, pos_label="p53_wt")
+pog_auroc = sklearn.metrics.roc_auc_score(pog_all_pred_df.p53_status, pog_true_label_prob)
+
 axes[1,0].text(0.20, 0.60, 'AUROC='+str(round(pog_auroc, 2)))
 axes[1,1].text(0.50, 0.60, 'AUPRC='+str(round(pog_auprc, 2)))
 
@@ -74,6 +81,9 @@ fcv.generate_auroc_curve(merged_all_pred_df.p53_status, merged_true_label_prob, 
 fcv.generate_auprc_curve(merged_all_pred_df.p53_status, merged_true_label_prob, axes[2,1])
 
 axes[2,0].text(-0.5, 0.5,'Merged', fontsize=fnt_size)
+
+both_auprc = sklearn.metrics.average_precision_score(merged_all_pred_df.p53_status, merged_true_label_prob, pos_label="p53_wt")
+both_auroc = sklearn.metrics.roc_auc_score(merged_all_pred_df.p53_status, merged_true_label_prob)
 
 axes[2,0].text(0.20, 0.60, 'AUROC='+str(round(both_auroc, 2)))
 axes[2,1].text(0.50, 0.60, 'AUPRC='+str(round(both_auprc, 2)))
@@ -178,21 +188,21 @@ merged_mis_gt95_w_type.to_csv('results/outliers.txt', sep='\t', index=False)
 ###############################################################################################
 
 clf = RandomForestClassifier(n_estimators=3000, max_depth=50, max_features=0.05, max_samples=0.99, min_samples_split=2, min_samples_leaf=2, n_jobs=40)
-clf.fit(both_feature_matrix, both_p53_labels)
+clf.fit(merged_feature_matrix, merged_p53_labels)
 rand_f_scores = clf.feature_importances_
 indices = np.argsort(rand_f_scores)
 rand_f_scores_sorted = pd.Series(np.sort(rand_f_scores))
-rand_forest_importance_scores_df = pd.DataFrame({'gene':pd.Series(X.columns[indices]), 'importance_score':rand_f_scores_sorted})
+rand_forest_importance_scores_df = pd.DataFrame({'gene':pd.Series(merged_feature_matrix.columns[indices]), 'importance_score':rand_f_scores_sorted})
 rand_forest_importance_scores_df = rand_forest_importance_scores_df.sort_values(by='importance_score', ascending=False)
 
 top_67_genes = rand_forest_importance_scores_df.iloc[0:67,:]
 
 # combine the TCGA and POG sets of samples with impactful mutations
-both_tpm_impact_p53 = pog_tpm_impactful_p53_mut.append(tcga_tpm_impactful_p53_mut, ignore_index=True)
+both_tpm_impact_p53 = pog_tpm_p53_impactful_mut.append(tcga_tpm_impactful_p53_mut, ignore_index=True)
 both_tpm_impact_p53 = both_tpm_impact_p53.set_index('sample_id')
 
 # combine the TCGA and POG sets of samples with WT p53 copies
-both_tpm_wt_p53 = pog_tpm_wt_p53.append(tcga_tpm_wt_p53, ignore_index=True)
+both_tpm_wt_p53 = pog_tpm_p53_wt.append(tcga_tpm_wt_p53, ignore_index=True)
 both_tpm_wt_p53 = both_tpm_wt_p53.set_index('sample_id')
 
 # extract the mutation rates and modification in expression in presence of p53 mutations
@@ -256,7 +266,7 @@ fig.savefig('top_10_expr.jpg',format='jpeg',dpi=400,bbox_inches='tight')
 ###############################################################################################
 ###############################################################################################
 
-both_p53_expr_test = pd.concat([tcga_tpm_not_impactful_p53_mut, pog_tpm_not_impactful_p53_mut])
+both_p53_expr_test = pd.concat([tcga_tpm_not_impactful_p53_mut, pog_tpm_p53_not_impact_mut])
 
 not_impactful_p53_predictions = clf.predict(both_p53_expr_test)
 not_impactful_p53_predictions_df = pd.DataFrame({'sample_id':both_p53_expr_test.index, 'pred':not_impactful_p53_predictions})
