@@ -4,11 +4,15 @@
 ############################################################################
 
 import pandas as pd
+import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 
 # function to calculate oob score for each cancer type
-def evaluate_RF_on_each_cancer_type(type_df, tcga_tpm_df, tcga_snv):
+def evaluate_RF_on_each_cancer_type(tcga_all_pred_df, type_df, tcga_tpm_df, tcga_snv):
     tcga_cancer_types = type_df.type.unique()
+
+    tcga_all_pred_df = tcga_all_pred_df.rename(columns={"expr_sa_ids": "sample_id"})
+    all_pred_w_type = pd.merge(tcga_all_pred_df, type_df, on='sample_id')
 
     tcga_cancer_types_oob = pd.DataFrame({'type':['a'], 'oob_score':[-0.1]})
 

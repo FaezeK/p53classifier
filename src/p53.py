@@ -10,6 +10,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import p53_helper as p53h
 import five_fold_cv as fcv
+import oob
 from sklearn.ensemble import RandomForestClassifier
 
 # read expression datasets
@@ -89,7 +90,7 @@ tcga_cancer_types_performance = fcv.performance_tcga_cancer_types(tcga_all_pred_
 tcga_cancer_types_performance.to_csv('results/TCGA_cancer_types_metrics.txt', sep='\t', index=False)
 
 # compare performance when all samples are used to train the RF vs when each cancer type samples are used
-tcga_cancer_types_oob = oob.evaluate_RF_on_each_cancer_type(tcga_type_df, tcga_tpm_pr, tcga_snv_pr)
+tcga_cancer_types_oob = oob.evaluate_RF_on_each_cancer_type(tcga_all_pred_df, tcga_type_df, tcga_tpm_pr, tcga_snv_pr)
 tcga_cancer_types_accuracy_oob = pd.merge(tcga_cancer_types_performance, tcga_cancer_types_oob, on='type')
 
 cancer_type_abbv_df = oob.make_abbv(tcga_type_df)
