@@ -46,29 +46,11 @@ pog_drugs_w_pred = pd.merge(both_p53_all_pred_df, pog_drugs, on='expr_sa_ids')
 drug_list = th.get_uniq_drugs(pog_drugs_w_pred)
 
 # make boxplots per drug group
-# platinum therapies
-plat_drugs = drug_list[drug_list.str.contains('PLAT')]
-pog_drugs_w_pred_plat = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(plat_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_plat, 'Platinum', 'platinum')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_plat, 'Platinum', 'platinum')
-
-# pyrimidine analouges
-capec_drugs = drug_list[drug_list.isin(['CAPECITABINE','FLUOROURACIL','CYTARABINE','GEMCITABINE','LONSURF'])]
-pog_drugs_w_pred_capec = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(capec_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_capec, 'PAs', 'pyr_ana')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_capec, 'PAs', 'pyr_ana')
-
-# folate antagonists
-flt_antag_drugs = drug_list[drug_list.isin(['METHOTREXATE','PEMETREXED','RALTITREXED','LEUCOVORIN'])]
-pog_drugs_w_pred_flt_antag = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(flt_antag_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_flt_antag, 'FAs', 'flt_anta')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_flt_antag, 'FAs', 'flt_anta')
-
-# taxanes
-taxan_drugs = drug_list[drug_list.isin(['PACLITAXEL','DOCETAXEL','GENETAXYL'])]
-pog_drugs_w_pred_taxan = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(taxan_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_taxan, 'Taxanes', 'taxanes')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_taxan, 'Taxanes', 'taxanes')
+# ALK inhibitors
+alk_nhbtrs_drugs = drug_list[drug_list.isin(['ALECTINIB','CERITINIB','CRIZOTINIB','LORLATINIB','BRIGATINIB'])]
+pog_drugs_w_pred_alk_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(alk_nhbtrs_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_alk_nhbtrs, 'ALK inhibitors', 'alk_nhbtr')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_alk_nhbtrs, 'ALK inhibitors', 'alk_nhbtr')
 
 # alkylating agents
 nitro_must_drugs = drug_list[drug_list.isin(['CYCLOPHOSPHAMIDE','MELPHALAN','BENDAMUSTINE','IFOSFAMIDE','LOMUSTINE','CARMUSTINE','BUSULFAN',
@@ -77,29 +59,17 @@ pog_drugs_w_pred_nitro_must = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.
 th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_nitro_must, 'AAs', 'alkyl_agnts')
 th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_nitro_must, 'AAs', 'alkyl_agnts')
 
-# cytotoxic antibiotics
-cttxc_ntbtcs_drugs = drug_list[drug_list.isin(['DOXORUBICIN','EPIRUBICIN','MITOMYCIN','BLEOMYCIN','DACTINOMYCIN'])]
-pog_drugs_w_pred_cttxc_ntbtcs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(cttxc_ntbtcs_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_cttxc_ntbtcs, 'CAs', 'cytotox_antibio')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_cttxc_ntbtcs, 'CAs', 'cytotox_antibio')
-
-# anti-VEGF
-anti_vegf_drugs = drug_list[drug_list.isin(['BEVACIZUMAB', 'CEDIRANIB','RAMUCIRUMAB'])]
-pog_drugs_w_pred_anti_vegf = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(anti_vegf_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_anti_vegf, 'Anti-VEGF', 'anti_VEGF')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_anti_vegf, 'Anti-VEGF', 'anti_VEGF')
+# anti-CTLA-4
+anti_ctla4_drugs = drug_list[drug_list.isin(['IPILIMUMAB','TREMELIMUMAB'])]
+pog_drugs_w_pred_anti_ctla4 = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(anti_ctla4_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_anti_ctla4, 'Anti-CTLA-4', 'anti_CTLA4')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_anti_ctla4, 'Anti-CTLA-4', 'anti_CTLA4')
 
 # anti-EGFR
 anti_egfr_drugs = drug_list[drug_list.isin(['CETUXIMAB','AFATINIB','ERLOTINIB','GEFITINIB','OSIMERTINIB','PANITUMUMAB','ROCILETINIB'])]
 pog_drugs_w_pred_anti_egfr = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(anti_egfr_drugs))]
 th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_anti_egfr, 'Anti-EGFR', 'anti_EGFR')
 th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_anti_egfr, 'Anti-EGFR', 'anti_EGFR')
-
-# anti-CTLA-4
-anti_ctla4_drugs = drug_list[drug_list.isin(['IPILIMUMAB','TREMELIMUMAB'])]
-pog_drugs_w_pred_anti_ctla4 = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(anti_ctla4_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_anti_ctla4, 'Anti-CTLA-4', 'anti_CTLA4')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_anti_ctla4, 'Anti-CTLA-4', 'anti_CTLA4')
 
 # anti-HER2
 anti_her2_drugs = drug_list[drug_list.isin(['TRASTUZUMAB','PERTUZUMAB','LAPATINIB'])]
@@ -113,17 +83,89 @@ pog_drugs_w_pred_anti_pdl1 = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.d
 th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_anti_pdl1, 'Anti-PD1/PDL1', 'anti_PD1_PDL1')
 th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_anti_pdl1, 'Anti-PD1/PDL1', 'anti_PD1_PDL1')
 
-# other monoclonal antibodies
-antibody_drugs = drug_list[drug_list.isin(['ALEMTUZUMAB','RITUXIMAB','OLARATUMAB','MONALIZUMAB','MOXR0916','AGS67E','CEMIPLIMAB','HERCEPTIN'])]
-pog_drugs_w_pred_antibody = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(antibody_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_antibody, 'Other MAs', 'other_mnclnl_ntbd')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_antibody, 'Other MAs', 'other_mnclnl_ntbd')
+# anti-VEGF
+anti_vegf_drugs = drug_list[drug_list.isin(['BEVACIZUMAB', 'CEDIRANIB','RAMUCIRUMAB'])]
+pog_drugs_w_pred_anti_vegf = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(anti_vegf_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_anti_vegf, 'Anti-VEGF', 'anti_VEGF')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_anti_vegf, 'Anti-VEGF', 'anti_VEGF')
 
-# topoisomerase inhibitors
-tpsmrs1nhbtrs_drugs = drug_list[drug_list.isin(['IRINOTECAN','TOPOTECAN','ETOPOSIDE','ETIRINOTECAN PEGOL'])]
-pog_drugs_w_pred_tpsmrs1nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(tpsmrs1nhbtrs_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_tpsmrs1nhbtrs, 'TIs', 'tpsmrs_nhbtr')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_tpsmrs1nhbtrs, 'TIs', 'tpsmrs_nhbtr')
+# antiandrogens
+ntndrgns_drugs = drug_list[drug_list.isin(['BICALUTAMIDE','FLUTAMIDE','ABIRATERONE','ENZALUTAMIDE'])]
+pog_drugs_w_pred_ntndrgns = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(ntndrgns_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_ntndrgns, 'Antiandrogens', 'antiandrogens')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_ntndrgns, 'Antiandrogens', 'antiandrogens')
+
+# antiestrogens
+ntstrgns_drugs = drug_list[drug_list.isin(['FULVESTRANT','TAMOXIFEN','EXEMESTANE','ANASTROZOLE','LETROZOLE'])]
+pog_drugs_w_pred_ntstrgns = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(ntstrgns_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_ntstrgns, 'Antiestrogens', 'antiestrogens')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_ntstrgns, 'Antiestrogens', 'antiestrogens')
+
+# antihyperglycemic agents
+metform_drugs = drug_list[drug_list.isin(['METFORMIN'])]
+pog_drugs_w_pred_metform = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(metform_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_metform, 'AntiHGs', 'antihyperglycemic')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_metform, 'AntiHGs', 'antihyperglycemic')
+
+# BRAF inhibitors
+brf_nhbtrs_drugs = drug_list[drug_list.isin(['DABRAFENIB','VEMURAFENIB'])]
+pog_drugs_w_pred_brf_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(brf_nhbtrs_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_brf_nhbtrs, 'BRAF Inhibitors', 'BRAF_nhbtr')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_brf_nhbtrs, 'BRAF Inhibitors', 'BRAF_nhbtr')
+
+# bisphosphonate
+bsphsphnt_drugs = drug_list[drug_list.isin(['ZOLEDRONIC ACID','PAMIDRONATE','CLODRONATE'])]
+pog_drugs_w_pred_bsphsphnt = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(bsphsphnt_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_bsphsphnt, 'Bisphosphonate', 'bisphosphonate')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_bsphsphnt, 'Bisphosphonate', 'bisphosphonate')
+
+# CDK4/6 inhibitors
+cdk46_nhbtrs_drugs = drug_list[drug_list.isin(['PALBOCICLIB','RIBOCICLIB'])]
+pog_drugs_w_pred_cdk46_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(cdk46_nhbtrs_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_cdk46_nhbtrs, 'CDK4/6 Is', 'CDK4_6_nhbtr')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_cdk46_nhbtrs, 'CDK4/6 Is', 'CDK4_6_nhbtr')
+
+# corticosteroids
+crtcstrds_drugs = drug_list[drug_list.isin(['PREDNISONE','CORTISONE','FLUDROCORTISONE','HYDROCORTISONE','DEXAMETHASONE'])]
+pog_drugs_w_pred_crtcstrds = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(crtcstrds_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_crtcstrds, 'Corticosteroids', 'corticosteroids')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_crtcstrds, 'Corticosteroids', 'corticosteroids')
+
+# cytotoxic antibiotics
+cttxc_ntbtcs_drugs = drug_list[drug_list.isin(['DOXORUBICIN','EPIRUBICIN','MITOMYCIN','BLEOMYCIN','DACTINOMYCIN'])]
+pog_drugs_w_pred_cttxc_ntbtcs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(cttxc_ntbtcs_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_cttxc_ntbtcs, 'CAs', 'cytotox_antibio')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_cttxc_ntbtcs, 'CAs', 'cytotox_antibio')
+
+# epothilones
+epothilones_drugs = drug_list[drug_list.isin(['ERIBULIN'])]
+pog_drugs_w_pred_epothilones = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(epothilones_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_epothilones, 'Epothilones', 'epothilones')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_epothilones, 'Epothilones', 'epothilones')
+
+# folate antagonists
+flt_antag_drugs = drug_list[drug_list.isin(['METHOTREXATE','PEMETREXED','RALTITREXED','LEUCOVORIN'])]
+pog_drugs_w_pred_flt_antag = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(flt_antag_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_flt_antag, 'FAs', 'flt_anta')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_flt_antag, 'FAs', 'flt_anta')
+
+# GnRH analouges
+grha_drugs = drug_list[drug_list.isin(['GOSERELIN', 'BUSERELIN', 'LEUPROLIDE', 'DEGARELIX'])]
+pog_drugs_w_pred_grha = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(grha_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_grha, 'GnRH Analouges', 'GnRH_analouge')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_grha, 'GnRH Analouges', 'GnRH_analouge')
+
+# IDO1 inhibitors
+ido1i_drugs = drug_list[drug_list.isin(['BMS-986205'])] # Linrodostat
+pog_drugs_w_pred_ido1i = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(ido1i_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_ido1i, 'IDO1 Inhibitor', 'IDO1_nhbtr')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_ido1i, 'IDO1 Inhibitor', 'IDO1_nhbtr')
+
+# mTOR inhibitors
+mtori_drugs = drug_list[drug_list.isin(['EVEROLIMUS','TEMSIROLIMUS'])]
+pog_drugs_w_pred_mtori = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(mtori_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_mtori, 'mTOR Inhibitors', 'mTOR_inhibitors')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_mtori, 'mTOR Inhibitors', 'mTOR_inhibitors')
 
 # multikinase inhibitors
 mltkns_nhbtrs_drugs = drug_list[drug_list.isin(['AXITINIB','CABOZANTINIB','IMATINIB','LENVATINIB','NERATINIB','PAZOPANIB','REGORAFENIB',
@@ -132,83 +174,11 @@ pog_drugs_w_pred_mltkns_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatme
 th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_mltkns_nhbtrs, 'MIs', 'mltkns_nhbtr')
 th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_mltkns_nhbtrs, 'MIs', 'mltkns_nhbtr')
 
-# ALK inhibitors
-alk_nhbtrs_drugs = drug_list[drug_list.isin(['ALECTINIB','CERITINIB','CRIZOTINIB','LORLATINIB','BRIGATINIB'])]
-pog_drugs_w_pred_alk_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(alk_nhbtrs_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_alk_nhbtrs, 'ALK inhibitors', 'alk_nhbtr')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_alk_nhbtrs, 'ALK inhibitors', 'alk_nhbtr')
-
-# CDK4/6 inhibitors
-cdk46_nhbtrs_drugs = drug_list[drug_list.isin(['PALBOCICLIB','RIBOCICLIB'])]
-pog_drugs_w_pred_cdk46_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(cdk46_nhbtrs_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_cdk46_nhbtrs, 'CDK4/6 Is', 'CDK4_6_nhbtr')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_cdk46_nhbtrs, 'CDK4/6 Is', 'CDK4_6_nhbtr')
-
-# BRAF inhibitors
-brf_nhbtrs_drugs = drug_list[drug_list.isin(['DABRAFENIB','VEMURAFENIB'])]
-pog_drugs_w_pred_brf_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(brf_nhbtrs_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_brf_nhbtrs, 'BRAF Inhibitors', 'BRAF_nhbtr')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_brf_nhbtrs, 'BRAF Inhibitors', 'BRAF_nhbtr')
-
-# vinca alkaloids
-vnc_lklds_drugs = drug_list[drug_list.isin(['VINORELBINE','VINCRISTINE'])]
-pog_drugs_w_pred_vnc_lklds = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(vnc_lklds_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_vnc_lklds, 'VAs', 'vinca_alkal')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_vnc_lklds, 'VAs', 'vinca_alkal')
-
-# epothilones
-epothilones_drugs = drug_list[drug_list.isin(['ERIBULIN'])]
-pog_drugs_w_pred_epothilones = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(epothilones_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_epothilones, 'Epothilones', 'epothilones')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_epothilones, 'Epothilones', 'epothilones')
-
-# antiestrogens
-ntstrgns_drugs = drug_list[drug_list.isin(['FULVESTRANT','TAMOXIFEN','EXEMESTANE','ANASTROZOLE','LETROZOLE'])]
-pog_drugs_w_pred_ntstrgns = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(ntstrgns_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_ntstrgns, 'Antiestrogens', 'antiestrogens')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_ntstrgns, 'Antiestrogens', 'antiestrogens')
-
-# corticosteroids
-crtcstrds_drugs = drug_list[drug_list.isin(['PREDNISONE','CORTISONE','FLUDROCORTISONE','HYDROCORTISONE','DEXAMETHASONE'])]
-pog_drugs_w_pred_crtcstrds = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(crtcstrds_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_crtcstrds, 'Corticosteroids', 'corticosteroids')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_crtcstrds, 'Corticosteroids', 'corticosteroids')
-
-# progestins
-prgstns_drugs = drug_list[drug_list.isin(['MEGESTROL','MEDROXYPROGESTERONE'])]
-pog_drugs_w_pred_prgstns = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(prgstns_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_prgstns, 'Progestins', 'progestins')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_prgstns, 'Progestins', 'progestins')
-
-# antiandrogens
-ntndrgns_drugs = drug_list[drug_list.isin(['BICALUTAMIDE','FLUTAMIDE','ABIRATERONE','ENZALUTAMIDE'])]
-pog_drugs_w_pred_ntndrgns = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(ntndrgns_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_ntndrgns, 'Antiandrogens', 'antiandrogens')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_ntndrgns, 'Antiandrogens', 'antiandrogens')
-
-# GnRH analouges
-grha_drugs = drug_list[drug_list.isin(['GOSERELIN', 'BUSERELIN', 'LEUPROLIDE', 'DEGARELIX'])]
-pog_drugs_w_pred_grha = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(grha_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_grha, 'GnRH Analouges', 'GnRH_analouge')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_grha, 'GnRH Analouges', 'GnRH_analouge')
-
-# antihyperglycemic agents
-metform_drugs = drug_list[drug_list.isin(['METFORMIN'])]
-pog_drugs_w_pred_metform = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(metform_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_metform, 'AntiHGs', 'antihyperglycemic')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_metform, 'AntiHGs', 'antihyperglycemic')
-
-# mTOR inhibitors
-mtori_drugs = drug_list[drug_list.isin(['EVEROLIMUS','TEMSIROLIMUS'])]
-pog_drugs_w_pred_mtori = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(mtori_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_mtori, 'mTOR Inhibitors', 'mTOR_inhibitors')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_mtori, 'mTOR Inhibitors', 'mTOR_inhibitors')
-
-# bisphosphonate
-bsphsphnt_drugs = drug_list[drug_list.isin(['ZOLEDRONIC ACID','PAMIDRONATE','CLODRONATE'])]
-pog_drugs_w_pred_bsphsphnt = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(bsphsphnt_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_bsphsphnt, 'Bisphosphonate', 'bisphosphonate')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_bsphsphnt, 'Bisphosphonate', 'bisphosphonate')
+# other monoclonal antibodies
+antibody_drugs = drug_list[drug_list.isin(['ALEMTUZUMAB','RITUXIMAB','OLARATUMAB','MONALIZUMAB','MOXR0916','AGS67E','CEMIPLIMAB','HERCEPTIN'])]
+pog_drugs_w_pred_antibody = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(antibody_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_antibody, 'Other MAs', 'other_mnclnl_ntbd')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_antibody, 'Other MAs', 'other_mnclnl_ntbd')
 
 # PARP inhibitors
 parpi_drugs = drug_list[drug_list.isin(['OLAPARIB','NIRAPARIB','VELIPARIB','RUCAPARIB','TALAZOPARIB'])]
@@ -216,11 +186,41 @@ pog_drugs_w_pred_parpi = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_
 th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_parpi, 'PARP Inhibitors', 'PARP_nhbtr')
 th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_parpi, 'PARP Inhibitors', 'PARP_nhbtr')
 
-# IDO1 inhibitors
-ido1i_drugs = drug_list[drug_list.isin(['BMS-986205'])] # Linrodostat
-pog_drugs_w_pred_ido1i = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(ido1i_drugs))]
-th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_ido1i, 'IDO1 Inhibitor', 'IDO1_nhbtr')
-th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_ido1i, 'IDO1 Inhibitor', 'IDO1_nhbtr')
+# platinum therapies
+plat_drugs = drug_list[drug_list.str.contains('PLAT')]
+pog_drugs_w_pred_plat = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(plat_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_plat, 'Platinum', 'platinum')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_plat, 'Platinum', 'platinum')
+
+# progestins
+prgstns_drugs = drug_list[drug_list.isin(['MEGESTROL','MEDROXYPROGESTERONE'])]
+pog_drugs_w_pred_prgstns = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(prgstns_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_prgstns, 'Progestins', 'progestins')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_prgstns, 'Progestins', 'progestins')
+
+# pyrimidine analouges
+capec_drugs = drug_list[drug_list.isin(['CAPECITABINE','FLUOROURACIL','CYTARABINE','GEMCITABINE','LONSURF'])]
+pog_drugs_w_pred_capec = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(capec_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_capec, 'PAs', 'pyr_ana')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_capec, 'PAs', 'pyr_ana')
+
+# taxanes
+taxan_drugs = drug_list[drug_list.isin(['PACLITAXEL','DOCETAXEL','GENETAXYL'])]
+pog_drugs_w_pred_taxan = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(taxan_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_taxan, 'Taxanes', 'taxanes')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_taxan, 'Taxanes', 'taxanes')
+
+# topoisomerase inhibitors
+tpsmrs1nhbtrs_drugs = drug_list[drug_list.isin(['IRINOTECAN','TOPOTECAN','ETOPOSIDE','ETIRINOTECAN PEGOL'])]
+pog_drugs_w_pred_tpsmrs1nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(tpsmrs1nhbtrs_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_tpsmrs1nhbtrs, 'TIs', 'tpsmrs_nhbtr')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_tpsmrs1nhbtrs, 'TIs', 'tpsmrs_nhbtr')
+
+# vinca alkaloids
+vnc_lklds_drugs = drug_list[drug_list.isin(['VINORELBINE','VINCRISTINE'])]
+pog_drugs_w_pred_vnc_lklds = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(vnc_lklds_drugs))]
+th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_vnc_lklds, 'VAs', 'vinca_alkal')
+th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_vnc_lklds, 'VAs', 'vinca_alkal')
 
 # put the graphs where RF performs better than true label together
 rf_images = [Image.open(x) for x in ['treatment_boxplots/platinum_rf.jpg',
