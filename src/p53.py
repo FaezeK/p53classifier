@@ -1,108 +1,193 @@
-import numpy as np
+############################################################################
+# This script contains the code for training the random forest to classify
+# tumour samples based on presence or absence of mutations in TP53 gene
+# and evaluating the model performance.
+############################################################################
+
 import pandas as pd
-import os
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report,confusion_matrix
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+import sklearn.metrics
+import p53_helper as p53h
+import five_fold_cv as fcv
+from sklearn.model_selection import StratifiedKFold
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report, confusion_matrix
+from scipy import stats
+from datetime import date
+from statannot import add_stat_annotation
 
-# find_tcga_p53_mut function finds the samples with and w/out p53 mutation in tcga
-def find_tcga_p53_mut(tcga_expr, tcga_snv):
+# read expression datasets
+pog_tpm_pr = pd.read_csv('POG_expr_prcssd.txt', delimiter = '\t', header=0)
+tcga_tpm_pr = pd.read_csv('TCGA_expr_prcssd.txt', delimiter='\t', header=0)
 
-    tcga_snv['donor_id'] = tcga_snv.sample_id.str.slice(start=0, stop=15)
-    tcga_expr['donor_id'] = tcga_expr.sample_id.str.slice(start=0, stop=15)
+# read mutation datasets
+pog_snv_pr = pd.read_csv('POG_snv_prcssd.txt', delimiter='\t', header=0)
+tcga_snv_pr = pd.read_csv('TCGA_snv_prcssd.txt', delimiter='\t', header=0)
 
-    # filter tcga expr and mut data to include samples that exist in both
-    tcga_snv = tcga_snv[tcga_snv.donor_id.isin(tcga_expr.donor_id)]
-    tcga_expr = tcga_expr[tcga_expr.donor_id.isin(tcga_snv.donor_id)]
+# read metadata
+pog_meta_pr = pd.read_csv('POG_meta_prcssd.txt', delimiter = '\t', header=0) # POG metadata
+tcga_type_df = pd.read_csv('TCGA_types.txt', delimiter='\t', header=0) # TCGA metadata
+print('The input files have been read')
+print('')
 
-    # find samples with mutated and wt p53 genes in TCGA
-    tcga_snv_fltr = tcga_snv[tcga_snv.gene_id == "TP53"]
+# make X and y matrices
+tcga_tpm_impactful_p53_mut, tcga_tpm_not_impactful_p53_mut, tcga_tpm_wt_p53 = p53h.find_tcga_p53_mut(tcga_tpm_pr, tcga_snv_pr)
+pog_tpm_p53_impactful_mut, pog_tpm_p53_not_impact_mut, pog_tpm_p53_wt = p53h.find_pog_p53_mut(pog_tpm_pr, pog_snv_pr)
 
-    tcga_impactful_p53_mut = tcga_snv_fltr[tcga_snv_fltr.effect.isin(['missense_variant', 'frameshift_variant', 'splice_acceptor_variant', 'stop_gained', 'inframe_deletion', 'splice_donor_variant', 'inframe_insertion', 'protein_altering_variant', 'start_lost'])]
-    tcga_not_impactful_p53_mut = tcga_snv_fltr[tcga_snv_fltr.effect.isin(['synonymous_variant', 'splice_region_variant', '3_prime_UTR_variant', 'intron_variant', '5_prime_UTR_variant'])]
+tcga_feature_matrix, tcga_p53_labels = p53h.make_X_y(tcga_tpm_impactful_p53_mut, tcga_tpm_wt_p53, 'p53_mut', 'p53_wt')
+pog_feature_matrix, pog_p53_labels = p53h.make_X_y(pog_tpm_p53_impactful_mut, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
+both_feature_matrix, both_p53_labels = p53h.make_X_y_merged(tcga_tpm_impactful_p53_mut, pog_tpm_p53_impactful_mut, tcga_tpm_wt_p53, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
 
-    tcga_impactful_p53_mut_samples = tcga_impactful_p53_mut.donor_id.unique()
-    tcga_not_impactful_p53_mut_samples = tcga_not_impactful_p53_mut.donor_id.unique()
-    tcga_not_impactful_p53_mut_samples = tcga_not_impactful_p53_mut_samples[np.isin(tcga_not_impactful_p53_mut_samples, tcga_impactful_p53_mut_samples)==False]
+###############################################################################################
+###############################################################################################
+############################## Random Forest Overall Performance ##############################
+###############################################################################################
+###############################################################################################
 
-    all_tcga_snv_samples = tcga_snv.donor_id.unique()
-    tcga_wt_p53_samples = all_tcga_snv_samples[np.isin(all_tcga_snv_samples, tcga_impactful_p53_mut_samples)==False]
-    tcga_wt_p53_samples = tcga_wt_p53_samples[np.isin(tcga_wt_p53_samples, tcga_not_impactful_p53_mut_samples)==False]
+# obtain random forest predictions on TCGA, POG, and merged datasets in a 5-fold CV analysis
+tcga_all_pred_df, tcga_all_prob, tcga_true_label_prob = fcv.predict_5_fold_cv(tcga_feature_matrix, tcga_p53_labels, 50, 25, 2)
+pog_all_pred_df, pog_all_prob, pog_true_label_prob = fcv.predict_5_fold_cv(pog_feature_matrix, pog_p53_labels, 100, 50, 1)
+merged_all_pred_df, merged_all_prob, merged_true_label_prob = fcv.predict_5_fold_cv(merged_feature_matrix, merged_p53_labels, 50, 2, 2)
 
-    # divide tcga tpm dataset by above groups
-    tcga_tpm_impactful_p53_mut = tcga_expr[tcga_expr.donor_id.isin(tcga_impactful_p53_mut_samples)]
-    tcga_tpm_not_impactful_p53_mut = tcga_expr[tcga_expr.donor_id.isin(tcga_not_impactful_p53_mut_samples)]
-    tcga_tpm_wt_p53 = tcga_expr[tcga_expr.donor_id.isin(tcga_wt_p53_samples)]
+# random forest performance (make the AUROC and AUPRC graphs)
+fig, axes =plt.subplots(3, 2, figsize=(12, 18), dpi=300)
+sns.set_theme()
 
-    tcga_tpm_impactful_p53_mut = tcga_tpm_impactful_p53_mut.drop(columns='donor_id')
-    tcga_tpm_not_impactful_p53_mut = tcga_tpm_not_impactful_p53_mut.drop(columns='donor_id')
-    tcga_tpm_wt_p53 = tcga_tpm_wt_p53.drop(columns='donor_id')
+fcv.generate_auroc_curve(tcga_all_pred_df.p53_status, tcga_true_label_prob, axes[0,0])
+fcv.generate_auprc_curve(tcga_all_pred_df.p53_status, tcga_true_label_prob, axes[0,1])
 
-    return tcga_tpm_impactful_p53_mut, tcga_tpm_not_impactful_p53_mut, tcga_tpm_wt_p53
+fnt_size = 18
+axes[0,0].set_title("AUROC", fontsize=fnt_size)
+axes[0,1].set_title("AUPRC", fontsize=fnt_size)
 
+axes[0,0].text(-0.45, 0.5,'TCGA', fontsize=fnt_size)
 
-# find_pog_p53_mut function finds the samples with and w/out p53 mutation in pog
-def find_pog_p53_mut(pog_expr, pog_snv):
+axes[0,0].text(0.20, 0.60, 'AUROC='+str(round(tcga_auroc, 2)))
+axes[0,1].text(0.50, 0.60, 'AUPRC='+str(round(tcga_auprc, 2)))
 
-    pog_snv_fltr = pog_snv[pog_snv.gene_id=="TP53"]
-    pog_snv_fltr_smpl = pog_snv_fltr.sample_id.unique()
+fcv.generate_auroc_curve(pog_all_pred_df.p53_status, pog_true_label_prob, axes[1,0])
+fcv.generate_auprc_curve(pog_all_pred_df.p53_status, pog_true_label_prob, axes[1,1])
 
-    pog_snv_impacful = pog_snv_fltr[pog_snv_fltr.effect.isin(['splice_donor_variant+intron_variant', 'missense_variant', 'splice_acceptor_variant+intron_variant', 'disruptive_inframe_deletion', 'stop_gained', 'frameshift_variant', 'missense_variant+splice_region_variant', 'splice_acceptor_variant+disruptive_inframe_deletion+splice_region_variant+splice_region_variant+intron_variant', 'disruptive_inframe_deletion+splice_region_variant', 'stop_lost', 'inframe_deletion'])]
-    pog_snv_impacful_smpl = pog_snv_impacful.sample_id.unique()
+axes[1,0].text(-0.45, 0.5,'POG', fontsize=fnt_size)
 
-    pog_snv_not_impacful = pog_snv_fltr[pog_snv_fltr.effect.isin(['splice_region_variant+intron_variant', 'intron_variant', 'downstream_gene_variant', 'upstream_gene_variant', '5_prime_UTR_variant', 'synonymous_variant', '3_prime_UTR_variant'])]
-    pog_snv_not_impacful_smpl = pog_snv_not_impacful.sample_id.unique()
-    pog_snv_not_impacful_smpl = pog_snv_not_impacful_smpl[np.isin(pog_snv_not_impacful_smpl, pog_snv_impacful_smpl)==False]
+axes[1,0].text(0.20, 0.60, 'AUROC='+str(round(pog_auroc, 2)))
+axes[1,1].text(0.50, 0.60, 'AUPRC='+str(round(pog_auprc, 2)))
 
-    pog_all_smpl = pog_snv.sample_id.unique()
-    pog_snv_wt_smpl = pog_all_smpl[np.isin(pog_all_smpl, pog_snv_fltr_smpl)==False]
+fcv.generate_auroc_curve(merged_all_pred_df.p53_status, merged_true_label_prob, axes[2,0])
+fcv.generate_auprc_curve(merged_all_pred_df.p53_status, merged_true_label_prob, axes[2,1])
 
-    # divide pog tpm data by above groups
-    pog_tpm_p53_wt = pog_expr[pog_expr.sample_id.isin(pog_snv_wt_smpl)]
-    pog_tpm_p53_impactful_mut = pog_expr[pog_expr.sample_id.isin(pog_snv_impacful_smpl)]
-    pog_tpm_p53_not_impact_mut = pog_expr[pog_expr.sample_id.isin(pog_snv_not_impacful_smpl)]
+axes[2,0].text(-0.5, 0.5,'Merged', fontsize=fnt_size)
 
-    return pog_tpm_p53_impactful_mut, pog_tpm_p53_not_impact_mut, pog_tpm_p53_wt
+axes[2,0].text(0.20, 0.60, 'AUROC='+str(round(both_auroc, 2)))
+axes[2,1].text(0.50, 0.60, 'AUPRC='+str(round(both_auprc, 2)))
 
+fig.savefig('auroc_auprc.jpg',format='jpeg',dpi=300,bbox_inches='tight')
 
-# make_X_y function creates the feature matrix and label array using two dfs w/ and w/out mut
-def make_X_y(exp_mut_df, exp_wt_df, mut_label, wt_label):
+###############################################################################################
+###############################################################################################
+#################### Random Forest Performance across 33 TCGA Cancer Types ####################
+###############################################################################################
+###############################################################################################
 
-    X=pd.concat([exp_mut_df, exp_wt_df])
-    y=pd.concat([pd.Series([mut_label]*exp_mut_df.shape[0]),pd.Series([wt_label]*exp_wt_df.shape[0])])
+tcga_cancer_types_performance = fcv.performance_tcga_cancer_types(tcga_all_pred_df, tcga_type_df)
+tcga_cancer_types_performance.to_csv('results/TCGA_cancer_types_metrics.txt', sep='\t', index=False)
 
-    return X, y
+# compare performance when all samples are used to train the RF vs when each cancer type samples are used
+tcga_cancer_types_oob = oob.evaluate_RF_on_each_cancer_type(tcga_type_df, tcga_tpm_pr, tcga_snv_pr)
+tcga_cancer_types_accuracy_oob = pd.merge(tcga_cancer_types_performance, tcga_cancer_types_oob, on='type')
 
+cancer_type_abbv_df = oob.make_abbv(tcga_type_df)
+tcga_cancer_types_accuracy_oob_abbv = pd.merge(tcga_cancer_types_accuracy_oob, cancer_type_abbv_df, on='type')
 
-# make_X_y_merged function creates the feature matrix and label array for merged data
-def make_X_y_merged(exp_mut_df1, exp_mut_df2, exp_wt_df1, exp_wt_df2, mut_label, wt_label):
+# make accuracy vs oob score graph
+tcga_cancer_types_accuracy_oob_abbv = tcga_cancer_types_accuracy_oob_abbv.sort_values(by='accuracy')
+tcga_cancer_types_accuracy_oob_abbv = tcga_cancer_types_accuracy_oob_abbv[['type','accuracy','oob_score','abbv']]
+tcga_cancer_types_accuracy_oob_abbv = tcga_cancer_types_accuracy_oob_abbv.set_index('abbv')
+sns.set(rc={'figure.figsize':(11.7,5.77)})
+fig = plt.figure()
+oob_vs_accr_plot = sns.lineplot(data=tcga_cancer_types_accuracy_oob_abbv, markers=True, dashes=False)
+plt.xticks(rotation=90)
+plt.xlabel('Cancer Type')
+plt.ylabel('Mean Accuracy and OOB Scores')
+fig.savefig('accr_vs_oob_plot.jpg',format='jpeg',dpi=400,bbox_inches='tight')
 
-    X = pd.concat([exp_mut_df1, exp_mut_df2, exp_wt_df1, exp_wt_df2])
-    y = pd.concat([pd.Series([mut_label]*exp_mut_df1.shape[0]), pd.Series([mut_label]*exp_mut_df2.shape[0]),
-                   pd.Series([wt_label]*exp_wt_df1.shape[0]), pd.Series([wt_label]*exp_wt_df2.shape[0])])
+###############################################################################################
+###############################################################################################
+############################ Prediction Probabilities and Outliers ############################
+###############################################################################################
+###############################################################################################
 
-    return X, y
+sns.set_style('white')
+fig, axes =plt.subplots(2, 2, figsize=(12, 10), dpi=300)
 
+# A
+merged_all_pred_df['pred_prob'] = merged_all_prob
+merged_all_pred_df['pred_crrctness'] = 'correct'
+merged_all_pred_df.loc[merged_all_pred_df['p53_status'] != merged_all_pred_df['predict'], 'pred_crrctness'] = 'mispredicted'
 
-# split_80_20 function splits X and y and keeps the proportion of class label
-def split_80_20(X, y):
+pred_crrctness_boxplot = sns.boxplot(data = merged_all_pred_df, x = "pred_crrctness", y = "pred_prob", palette="Paired", ax=axes[0,0])
+axes[0,0].set(xlabel='', ylabel='Prediction Probability')
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.2)
+# B
+merged_all_pred_df['cohort'] = 'TCGA'
+merged_all_pred_df.loc[merged_all_pred_df['expr_sa_ids'].str.contains('POG'), 'cohort'] = 'POG'
 
-    # set samples ids as index
-    X_train = X_train.set_index('sample_id')
-    X_test = X_test.set_index('sample_id')
+pred_crrctness_cohort_boxplot = sns.boxplot(data = merged_all_pred_df, x = "cohort", y = "pred_prob", hue = "pred_crrctness",
+                                            palette="Paired", ax=axes[0,1])
+axes[0,1].set(xlabel='', ylabel='Prediction Probability')
+axes[0,1].legend(bbox_to_anchor=(0.35, 1))
 
-    return X_train, X_test, y_train, y_test
+# C
+pred_crrctness_p53stat_boxplot = sns.boxplot(data = merged_all_pred_df, x = "p53_status", y = "pred_prob", hue = "pred_crrctness",
+                                            palette="Greens", order=['p53_wt', 'p53_mut'], ax=axes[1,0])
+axes[1,0].set(xlabel='p53 status', ylabel='Prediction Probability')
+axes[1,0].legend(bbox_to_anchor=(0.35, 1))
 
+# D
+pred_crrctness_p53class_boxplot = sns.boxplot(data = merged_all_pred_df, x = "predict", y = "pred_prob", hue = "pred_crrctness",
+                                            palette="Greens", order=['p53_wt', 'p53_mut'], ax=axes[1,1])
+axes[1,1].set(xlabel='p53 Classification by RF', ylabel='Prediction Probability')
+axes[1,1].legend(bbox_to_anchor=(0.35, 1))
 
-# split_90_10 function splits X and y and keeps the proportion of class label
-def split_90_10(X, y):
+# add titles
+axes[0,0].set_title('A', fontsize=22)
+axes[0,0].title.set_position([-0.1, 1.1])
 
-    X_train, X_test, y_train, y_test = train_test_split(X, y, stratify=y, test_size=0.1)
+axes[0,1].set_title('B', fontsize=22)
+axes[0,1].title.set_position([-0.1, 1.1])
 
-    # set samples ids as index
-    X_train = X_train.set_index('sample_id')
-    X_test = X_test.set_index('sample_id')
+axes[1,0].set_title('C', fontsize=22)
+axes[1,0].title.set_position([-0.1, 1.1])
 
-    return X_train, X_test, y_train, y_test
+axes[1,1].set_title('D', fontsize=22)
+axes[1,1].title.set_position([-0.1, 1.1])
+
+fig.tight_layout()
+fig.savefig('pred_prob_all4.jpg',format='jpeg',dpi=300,bbox_inches='tight')
+
+# extract the mispredicted samples with high Probabilities
+merged_mis_gt95 = merged_all_pred_df[(merged_all_pred_df.pred_crrctness=='mispredicted') & (merged_all_pred_df.pred_prob > 0.95)]
+merged_mis_gt95 = merged_mis_gt95.sort_values(by='pred_prob', ascending=False)
+
+merged_mis_gt95 = merged_mis_gt95.rename(columns={"expr_sa_ids": "sample_id"})
+merged_mis_gt95_w_type = pd.merge(merged_mis_gt95, tcga_type_df, on='sample_id')
+merged_mis_gt95_w_type = merged_mis_gt95_w_type.sort_values(by='type')
+merged_mis_gt95_w_type.to_csv('results/outliers.txt', sep='\t', index=False)
+
+###############################################################################################
+###############################################################################################
+############################ Important Features in Classification #############################
+###############################################################################################
+###############################################################################################
+
+clf = RandomForestClassifier(n_estimators=3000, max_depth=50, max_features=0.05, max_samples=0.99, min_samples_split=2, min_samples_leaf=2, n_jobs=40)
+clf.fit(both_feature_matrix, both_p53_labels)
+rand_f_scores = clf.feature_importances_
+indices = np.argsort(rand_f_scores)
+rand_f_scores_sorted = pd.Series(np.sort(rand_f_scores))
+rand_forest_importance_scores_df = pd.DataFrame({'gene':pd.Series(X.columns[indices]), 'importance_score':rand_f_scores_sorted})
+rand_forest_importance_scores_df = rand_forest_importance_scores_df.sort_values(by='importance_score', ascending=False)
+
+top_67_genes = rand_forest_importance_scores_df.iloc[0:67,:]

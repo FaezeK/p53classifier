@@ -4,13 +4,9 @@
 ############################################################################
 
 import pandas as pd
-import numpy as np
 import timeit
-import p53
-import process_expr
-import process_mut
-import p53_hyperparam as p53hp
-import make_pca
+import p53_helper as p53h
+import grid_search as gs
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import StratifiedKFold
@@ -18,69 +14,39 @@ from sklearn.model_selection import StratifiedKFold
 start_time = timeit.default_timer()
 
 # read expression datasets
-pog_tpm = pd.read_csv('POG_TPM_matrix.txt', delimiter = '\t', header=0)
-tcga_tpm = pd.read_csv('tcga_rsem_gene_tpm.txt', delimiter='\t', header=0)
+pog_tpm_pr = pd.read_csv('POG_expr_prcssd.txt', delimiter = '\t', header=0)
+tcga_tpm_pr = pd.read_csv('TCGA_expr_prcssd.txt', delimiter='\t', header=0)
 
 # read mutation datasets
-pog_snv = pd.read_csv('POG_small_mutations.txt', delimiter='\t', header=0)
-tcga_snv = pd.read_csv('mc3.v0.2.8.PUBLIC.txt', delimiter='\t', header=0)
+pog_snv_pr = pd.read_csv('POG_snv_prcssd.txt', delimiter='\t', header=0)
+tcga_snv_pr = pd.read_csv('TCGA_snv_prcssd.txt', delimiter='\t', header=0)
 
 # read metadata
-common_genes = pd.read_csv('common_genes.txt', delimiter = '\t', header=0) # list of common genes between POG and TCGA datasets
-pog_meta = pd.read_csv('pog_cohort_details.txt', delimiter = '\t', header=0) # POG metadata
+pog_meta_pr = pd.read_csv('POG_meta_prcssd.txt', delimiter = '\t', header=0) # POG metadata
 tss = pd.read_csv('tissueSourceSite.tsv', delimiter='\t', header=0) # TCGA metadata
 print('The input files have been read')
 print('')
 
-# process expr data
-pog_tpm_trnspsd, pog_tpm_fltrd_genes = process_expr.process_POG_expr(pog_tpm, common_genes)
-tcga_actual_tpm_ucsc = process_expr.process_TCGA_expr(tcga_tpm, common_genes, pog_tpm_fltrd_genes)
-
-# process mutation data
-pog_snv = process_POG_mut(pog_snv)
-tcga_snv = process_TCGA_mut(tcga_snv)
-
-print('Data preprocessing is done . . .')
-print('')
-print('Making PCA plots . . .')
-print('')
-
-# process metadata
-pog_meta_fltrd = pog_meta[['ID','PRIMARY SITE']]
-pog_meta_fltrd = pog_meta_fltrd.rename(columns={'ID':'sample_id'})
-
-# generate PCA plots
-make_pca.generate_PCA(pog_tpm_trnspsd, pog_meta_fltrd, 'POG')
-
-tcga_type_df = make_pca.extract_tcga_types(tcga_expr, tcga_meta)
-
-make_pca.generate_PCA(tcga_actual_tpm_ucsc, tcga_type_df, 'TCGA')
-
-make_pca.generate_PCA_merged(tcga_actual_tpm_ucsc, pog_tpm_trnspsd)
-
-print('PCA plots are made . . .')
-print('')
-
 # make X and y matrices
-tcga_tpm_impactful_p53_mut, tcga_tpm_not_impactful_p53_mut, tcga_tpm_wt_p53 = p53.find_tcga_p53_mut(tcga_actual_tpm_ucsc, tcga_snv)
-pog_tpm_p53_impactful_mut, pog_tpm_p53_not_impact_mut, pog_tpm_p53_wt = p53.find_pog_p53_mut(pog_tpm_trnspsd, pog_snv)
+tcga_tpm_impactful_p53_mut, tcga_tpm_not_impactful_p53_mut, tcga_tpm_wt_p53 = p53h.find_tcga_p53_mut(tcga_tpm_pr, tcga_snv_pr)
+pog_tpm_p53_impactful_mut, pog_tpm_p53_not_impact_mut, pog_tpm_p53_wt = p53h.find_pog_p53_mut(pog_tpm_pr, pog_snv_pr)
 
-tcga_feature_matrix, tcga_p53_labels = p53.make_X_y(tcga_tpm_impactful_p53_mut, tcga_tpm_wt_p53, 'p53_mut', 'p53_wt')
-pog_feature_matrix, pog_p53_labels = p53.make_X_y(pog_tpm_p53_impactful_mut, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
-both_feature_matrix, both_p53_labels = p53.make_X_y_merged(tcga_tpm_impactful_p53_mut, pog_tpm_p53_impactful_mut, tcga_tpm_wt_p53, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
+tcga_feature_matrix, tcga_p53_labels = p53h.make_X_y(tcga_tpm_impactful_p53_mut, tcga_tpm_wt_p53, 'p53_mut', 'p53_wt')
+pog_feature_matrix, pog_p53_labels = p53h.make_X_y(pog_tpm_p53_impactful_mut, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
+both_feature_matrix, both_p53_labels = p53h.make_X_y_merged(tcga_tpm_impactful_p53_mut, pog_tpm_p53_impactful_mut, tcga_tpm_wt_p53, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
 
 # divide feature matrices to 90% test and 10% validation sets
-tcga_X_train, tcga_X_test, tcga_y_train, tcga_y_test = p53.split_90_10(tcga_feature_matrix, tcga_p53_labels)
-pog_X_train, pog_X_test, pog_y_train, pog_y_test = p53.split_90_10(pog_feature_matrix, pog_p53_labels)
-both_X_train, both_X_test, both_y_train, both_y_test = p53.split_90_10(both_feature_matrix, both_p53_labels)
+tcga_X_train, tcga_X_test, tcga_y_train, tcga_y_test = p53h.split_90_10(tcga_feature_matrix, tcga_p53_labels)
+pog_X_train, pog_X_test, pog_y_train, pog_y_test = p53h.split_90_10(pog_feature_matrix, pog_p53_labels)
+both_X_train, both_X_test, both_y_train, both_y_test = p53h.split_90_10(both_feature_matrix, both_p53_labels)
 
 print('feature matrices and label arrays are ready!')
 print('')
 
 # find the hyperparameters resulting in the best performance in a CV analysis
-tcga_grid_result = p53hp.findHyperparam(tcga_X_train, tcga_y_train)
-pog_grid_result = p53hp.findHyperparam(pog_X_train, pog_y_train)
-both_grid_result = p53hp.findHyperparam(both_X_train, both_y_train)
+tcga_grid_result = gs.findHyperparam(tcga_X_train, tcga_y_train)
+pog_grid_result = gs.findHyperparam(pog_X_train, pog_y_train)
+both_grid_result = gs.findHyperparam(both_X_train, both_y_train)
 
 ##################################################################################
 ### Write the Grid Search results for POG to a file and test on validation set ###
