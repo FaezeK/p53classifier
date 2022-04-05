@@ -5,10 +5,10 @@
 
 import numpy as np
 import pandas as pd
-import os
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import classification_report,confusion_matrix
+from statannot import add_stat_annotation
 
 # find_tcga_p53_mut function finds the samples with and w/out p53 mutation in tcga
 def find_tcga_p53_mut(tcga_expr, tcga_snv):
@@ -114,7 +114,7 @@ def split_90_10(X, y):
 
 
 # make boxplots of expression for top genes
-def gene_expr_boxplot_mutVsWt_multi(gene_name_ensembl, pos):
+def gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, gene_name_ensembl, pos):
     data_mut = both_tpm_impact_p53[gene_name_ensembl]
     data_wt = both_tpm_wt_p53[gene_name_ensembl]
     data_mut_df = pd.DataFrame({'expr':data_mut,'group':'p53 Mut'})
