@@ -3,6 +3,8 @@
 # mutations to be used to generate labels.
 ############################################################################
 
+import pandas as pd
+
 def process_POG_mut(pog_snv):
     pog_snv = pog_snv[['pog_id','gene_id','aa_change','effect']]
 

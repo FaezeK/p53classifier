@@ -55,7 +55,7 @@ print('')
 # generate PCA plots
 make_pca.generate_PCA(pog_tpm_trnspsd, pog_meta_fltrd, 'POG')
 
-tcga_type_df = make_pca.extract_tcga_types(tcga_expr, tcga_meta)
+tcga_type_df = make_pca.extract_tcga_types(tcga_actual_tpm_ucsc, tss)
 
 make_pca.generate_PCA(tcga_actual_tpm_ucsc, tcga_type_df, 'TCGA')
 

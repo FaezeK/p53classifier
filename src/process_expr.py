@@ -3,6 +3,8 @@
 # used as the random forest input
 ############################################################################
 
+import pandas as pd
+
 def process_POG_expr(pog_expr, pog_genes):
     pog_expr = pog_expr.rename(columns={"genes": "ensembl_ids"})
 
