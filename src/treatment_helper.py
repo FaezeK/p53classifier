@@ -2,6 +2,10 @@
 # This script contains functions required in the treatment.py script.
 ############################################################################
 
+import pandas as pd
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 from sklearn.model_selection import StratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
 from datetime import date

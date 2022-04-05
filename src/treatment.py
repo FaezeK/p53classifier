@@ -5,8 +5,6 @@
 
 import pandas as pd
 import numpy as np
-import seaborn as sns
-import matplotlib.pyplot as plt
 import p53_helper as p53h
 import treatment_helper as th
 from PIL import Image
