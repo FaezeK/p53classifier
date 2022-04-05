@@ -111,3 +111,22 @@ def split_90_10(X, y):
     X_test = X_test.set_index('sample_id')
 
     return X_train, X_test, y_train, y_test
+
+
+# make boxplots of expression for top genes
+def gene_expr_boxplot_mutVsWt_multi(gene_name_ensembl, pos):
+    data_mut = both_tpm_impact_p53[gene_name_ensembl]
+    data_wt = both_tpm_wt_p53[gene_name_ensembl]
+    data_mut_df = pd.DataFrame({'expr':data_mut,'group':'p53 Mut'})
+    data_wt_df = pd.DataFrame({'expr':data_wt,'group':'p53 WT'})
+    data_df = pd.concat([data_mut_df, data_wt_df])
+
+    # add 1 to be able to take the log
+    data_df['expr2'] = data_df.expr + 1
+
+    sns.boxplot(data = data_df, x = "group", y = "expr2", palette="husl", ax=pos)
+    pos.set_yscale("log")
+    pos.set(xlabel='', ylabel='Log10 (TPM+1)')
+    pos.set_title(gene_name_ensembl.split('_')[0], fontsize=15)
+    add_stat_annotation(pos, data=data_df, x="group", y="expr", order=['p53 Mut', 'p53 WT'],
+                    box_pairs=[("p53 Mut", "p53 WT")], test='Mann-Whitney', text_format='star', loc='inside', verbose=2)

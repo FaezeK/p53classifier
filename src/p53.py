@@ -8,15 +8,9 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
-import sklearn.metrics
 import p53_helper as p53h
 import five_fold_cv as fcv
-from sklearn.model_selection import StratifiedKFold
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import classification_report, confusion_matrix
-from scipy import stats
-from datetime import date
-from statannot import add_stat_annotation
 
 # read expression datasets
 pog_tpm_pr = pd.read_csv('POG_expr_prcssd.txt', delimiter = '\t', header=0)
@@ -191,3 +185,86 @@ rand_forest_importance_scores_df = pd.DataFrame({'gene':pd.Series(X.columns[indi
 rand_forest_importance_scores_df = rand_forest_importance_scores_df.sort_values(by='importance_score', ascending=False)
 
 top_67_genes = rand_forest_importance_scores_df.iloc[0:67,:]
+
+# combine the TCGA and POG sets of samples with impactful mutations
+both_tpm_impact_p53 = pog_tpm_impactful_p53_mut.append(tcga_tpm_impactful_p53_mut, ignore_index=True)
+both_tpm_impact_p53 = both_tpm_impact_p53.set_index('sample_id')
+
+# combine the TCGA and POG sets of samples with WT p53 copies
+both_tpm_wt_p53 = pog_tpm_wt_p53.append(tcga_tpm_wt_p53, ignore_index=True)
+both_tpm_wt_p53 = both_tpm_wt_p53.set_index('sample_id')
+
+# extract the mutation rates and modification in expression in presence of p53 mutations
+# for the top 67 genes
+#pd.set_option('display.max_rows', 500)
+top_genes_mut_rate_n_reg_stat = pd.DataFrame({'gene':['a'],'imp_score':[-1.0],'mut_rate_tcga':[-1],'mut_rate_pog':[-1],'reg_stat':['up_or_down']})
+
+for i in top_67_genes.gene:
+    i_p53_mut = both_tpm_impact_p53[i]
+    i_p53_wt = both_tpm_wt_p53[i]
+
+    i_p53_mut_mean = i_p53_mut.mean()
+    i_p53_mut_median = i_p53_mut.median()
+    i_p53_wt_mean = i_p53_wt.mean()
+    i_p53_wt_median = i_p53_wt.median()
+
+    if i_p53_mut_median > i_p53_wt_median:
+        reg_stat = 'Up-reg'
+    elif i_p53_mut_median < i_p53_wt_median:
+        reg_stat = 'Down-reg'
+    elif (i_p53_mut_median == i_p53_wt_median) & (i_p53_mut_mean > i_p53_wt_mean):
+        reg_stat = 'Up-reg'
+    elif (i_p53_mut_median == i_p53_wt_median) & (i_p53_mut_mean < i_p53_wt_mean):
+        reg_stat = 'Down-reg'
+    else:
+        reg_stat = 'No diff'
+
+    g = i.split('_')[0]
+    g_mut_rate_tcga = round((len(tcga_snv_pr[tcga_snv_pr.gene_id==g].donor_id.unique()) / len(tcga_snv_pr.donor_id.unique())) * 100, ndigits=2)
+    g_mut_rate_pog = round((len(pog_snv_pr[pog_snv_pr.gene_id==g].sample_id.unique()) / len(pog_snv_pr.sample_id.unique())) * 100, ndigits=2)
+
+    scr = top_67_genes.importance_score[top_67_genes.gene==i].iloc[0]
+
+    i_row = pd.Series({'gene':g,'imp_score':scr,'mut_rate_tcga':g_mut_rate_tcga,'mut_rate_pog':g_mut_rate_pog,'reg_stat':reg_stat})
+    top_genes_mut_rate_n_reg_stat = top_genes_mut_rate_n_reg_stat.append(i_row, ignore_index=True)
+
+top_genes_mut_rate_n_reg_stat = top_genes_mut_rate_n_reg_stat[top_genes_mut_rate_n_reg_stat.gene != 'a']
+top_genes_mut_rate_n_reg_stat.to_csv('top67_genes_w_mut_rate_reg_stat.txt', sep='\t', index=False)
+
+# boxplots of expr for the top 10 genes
+sns.set_style("whitegrid")
+fig, axes =plt.subplots(5, 2, figsize=(12, 26), dpi=400)
+sns.set_style("whitegrid")
+
+p53h.gene_expr_boxplot_mutVsWt_multi('EDA2R_ENSG00000131080', axes[0,0])
+p53h.gene_expr_boxplot_mutVsWt_multi('RPS27L_ENSG00000185088', axes[0,1])
+p53h.gene_expr_boxplot_mutVsWt_multi('MDM2_ENSG00000135679', axes[1,0])
+p53h.gene_expr_boxplot_mutVsWt_multi('MYBL2_ENSG00000101057', axes[1,1])
+p53h.gene_expr_boxplot_mutVsWt_multi('UBE2C_ENSG00000175063', axes[2, 0])
+p53h.gene_expr_boxplot_mutVsWt_multi('CDC20_ENSG00000117399', axes[2,1])
+p53h.gene_expr_boxplot_mutVsWt_multi('RP11-115D19.1_ENSG00000251095', axes[3,0])
+p53h.gene_expr_boxplot_mutVsWt_multi('FAM83D_ENSG00000101447', axes[3,1])
+p53h.gene_expr_boxplot_mutVsWt_multi('RP11-611O2.5_ENSG00000257181', axes[4,0])
+p53h.gene_expr_boxplot_mutVsWt_multi('DDB2_ENSG00000134574', axes[4,1])
+
+fig.savefig('top_10_expr.jpg',format='jpeg',dpi=400,bbox_inches='tight')
+
+###############################################################################################
+###############################################################################################
+################################## Non-impactful Mutations ####################################
+###############################################################################################
+###############################################################################################
+
+both_p53_expr_test = pd.concat([tcga_tpm_not_impactful_p53_mut, pog_tpm_not_impactful_p53_mut])
+
+not_impactful_p53_predictions = clf.predict(both_p53_expr_test)
+not_impactful_p53_predictions_df = pd.DataFrame({'sample_id':both_p53_expr_test.index, 'pred':not_impactful_p53_predictions})
+
+# add mutation effect to the above df
+tcga_mut_effect = tcga_snv_pr[tcga_snv_pr.gene_id=="TP53"]
+pog_mut_effect = pog_snv_pr[pog_snv_pr.gene_id=="TP53"]
+all_mut_effect = pd.concat([tcga_mut_effect, pog_mut_effect])
+
+not_impactful_p53_predictions_df = pd.merge(not_impactful_p53_predictions_df, all_mut_effect, on='sample_id')
+not_impactful_p53_predictions_df = not_impactful_p53_predictions_df.drop_duplicates()
+not_impactful_p53_predictions_df.to_csv('not_impact_mut_pred.txt', sep='\t', index=False)
