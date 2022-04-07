@@ -1,6 +1,15 @@
 ############################################################################
 # This script contains the code to analyze treatments efficacy in patients
 # with WT p53 copies vs patients with mutated TP53.
+#
+# Drugs in this script are grouped based on the information found in the
+# following resources:
+# 1 - Antineoplastic Agents in Synthesis of Best-Seller Drugs by R. Vardanyan
+# and V. Hruby
+# 2 - Antineoplastic Agents in LiverTox: Clinical and Research Information
+# on Drug-Induced Liver Injury
+# 3 - DRUGBANK database (DrugBank 5.0)
+# 4 - National Cancer Institute (NCI) Drug Dictionary
 ############################################################################
 
 import pandas as pd

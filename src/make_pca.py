@@ -43,7 +43,7 @@ def generate_PCA(expr_df, metadata, dat):
     else:
         tcga_pca_plt = sns.scatterplot(x="pc1", y="pc2", hue="type", data=expr_finalDf)
     plt.legend(bbox_to_anchor=(1, 1.02))
-    ax.figure.savefig(dat+'_pca.jpg',format='jpeg',dpi=300,bbox_inches='tight')
+    ax.figure.savefig('results/'+dat+'_pca.jpg',format='jpeg',dpi=300,bbox_inches='tight')
 
 def generate_PCA_merged(tcga_expr, pog_expr):
     tcga_no_ids = tcga_expr.set_index('sample_id')
@@ -70,4 +70,4 @@ def generate_PCA_merged(tcga_expr, pog_expr):
     fig, ax = plt.subplots(figsize=fig_dims)
     both_pca_plt = sns.scatterplot(x="pc1", y="pc2", hue="cohort", data=both_finalDf)#, alpha=0.5)
     plt.legend(bbox_to_anchor=(1, 1))
-    ax.figure.savefig('merged_pca.jpg',format='jpeg',dpi=300,bbox_inches='tight')
+    ax.figure.savefig('results/merged_pca.jpg',format='jpeg',dpi=300,bbox_inches='tight')
