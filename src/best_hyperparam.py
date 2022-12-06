@@ -52,7 +52,7 @@ both_grid_result = gs.findHyperparam(both_X_train, both_y_train)
 ### Write the Grid Search results for POG to a file and test on validation set ###
 ##################################################################################
 
-f = open('res/pog_hyper_param_results.txt', 'w')
+f = open('results/pog_hyper_param_results.txt', 'w')
 print('best score:', file=f)
 print(pog_grid_result.best_score_, file=f)
 print('', file=f)
@@ -93,7 +93,7 @@ print(classification_report(pog_p53_pred_df2.p53_status, pog_p53_pred_df2.predic
 ### Write the Grid Search results for TCGA to a file and test on validation set ###
 ###################################################################################
 
-f2 = open('res/tcga_hyper_param_results.txt', 'w')
+f2 = open('results/tcga_hyper_param_results.txt', 'w')
 print('best score:', file=f2)
 print(tcga_grid_result.best_score_, file=f2)
 print('', file=f2)
@@ -134,7 +134,7 @@ print(classification_report(tcga_p53_pred_df2.p53_status, tcga_p53_pred_df2.pred
 ### Write the Grid Search results for both to a file and test on validation set ###
 ###################################################################################
 
-f3 = open('res/both_hyper_param_results.txt', 'w')
+f3 = open('results/both_hyper_param_results.txt', 'w')
 print('best score:', file=f3)
 print(both_grid_result.best_score_, file=f3)
 print('', file=f3)

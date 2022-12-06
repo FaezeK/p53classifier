@@ -19,7 +19,7 @@ tcga_snv = pd.read_csv('mc3.v0.2.8.PUBLIC.txt', delimiter='\t', header=0)
 common_genes = pd.read_csv('common_genes.txt', delimiter = '\t', header=0) # list of common genes between POG and TCGA datasets
 pog_meta = pd.read_csv('pog_cohort_details.txt', delimiter = '\t', header=0) # POG metadata
 tss = pd.read_csv('tissueSourceSite.tsv', delimiter='\t', header=0) # TCGA metadata
-print('The input files have been read')
+print('The input files have been read . . .')
 print('')
 
 # process expr data
@@ -70,3 +70,5 @@ tcga_type_df.to_csv('TCGA_types.txt', sep='\t', index=False)
 pog_tpm_trnspsd.to_csv('POG_expr_prcssd.txt', sep='\t', index=False)
 pog_snv.to_csv('POG_snv_prcssd.txt', sep='\t', index=False)
 pog_meta_fltrd.to_csv('POG_meta_prcssd.txt', sep='\t', index=False)
+
+print('Processed files have been made in the current directory!')
