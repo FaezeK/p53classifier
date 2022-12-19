@@ -14,7 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 skf = StratifiedKFold(n_splits=5, shuffle=True)
 
 # function to train and evaluate RF in a 5-fold CV
-def predict_5_fold_cv(X, y, max_depth, min_smpl_split, min_smpl_leaf):
+def predict_5_fold_cv(X, y, max_depth, max_features, max_smpls, min_smpl_split, min_smpl_leaf):
     all_pred_df = pd.DataFrame({'expr_sa_ids':['a'], 'p53_status':['mut_wt'], 'predict':['mut_wt']})
     all_prob = []
     true_label_prob = np.empty([0,])
@@ -24,8 +24,8 @@ def predict_5_fold_cv(X, y, max_depth, min_smpl_split, min_smpl_leaf):
         y_train, y_test = y.iloc[train_index], y.iloc[test_index]
         X_train, X_test = X.iloc[train_index], X.iloc[test_index]
 
-        clf = RandomForestClassifier(n_estimators=3000, max_depth=max_depth, max_features=0.05,
-            max_samples=0.99, min_samples_split=min_smpl_split, min_samples_leaf=min_smpl_leaf, n_jobs=40)
+        clf = RandomForestClassifier(n_estimators=3000, max_depth=max_depth, max_features=max_features,
+            max_samples=max_smpls, min_samples_split=min_smpl_split, min_samples_leaf=min_smpl_leaf, n_jobs=40)
         clf.fit(X_train, y_train)
 
         sample_ids = X_test.index.values

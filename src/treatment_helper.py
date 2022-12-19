@@ -28,29 +28,6 @@ def process_pog_drugs(pog_drugs):
     return pog_drugs
 
 
-def predict_labs_5cv(X, y):
-    skf = StratifiedKFold(n_splits=5, shuffle=True)
-
-    both_p53_all_pred_df = pd.DataFrame({'expr_sa_ids':['a'], 'p53_status':['mut_wt'], 'predict':['mut_wt']})
-
-    for train_index, test_index in skf.split(X, y):
-
-        y_train, y_test = y.iloc[train_index], y.iloc[test_index]
-        X_train, X_test = X.iloc[train_index], X.iloc[test_index]
-
-        clf = RandomForestClassifier(n_estimators=3000, max_depth=50, max_features=0.05, max_samples=0.99, min_samples_split=2, min_samples_leaf=2, n_jobs=40)
-        clf.fit(X_train, y_train)
-
-        sample_ids = X_test.index.values
-        p53_predictions = clf.predict(X_test)
-        both_p53_pred_df = pd.DataFrame({'expr_sa_ids':sample_ids, 'p53_status':y_test, 'predict':p53_predictions})
-        both_p53_all_pred_df = both_p53_all_pred_df.append(both_p53_pred_df, ignore_index=True)
-
-    both_p53_all_pred_df = both_p53_all_pred_df[both_p53_all_pred_df.expr_sa_ids != 'a']
-
-    return both_p53_all_pred_df
-
-
 def get_uniq_drugs(pog_drugs_w_pred):
     drug_list = []
     for j in pog_drugs_w_pred['drug_treatment.drug_list']:
@@ -84,7 +61,7 @@ def make_trtmnt_RF_pred_bxplt(drug_data, drug_group, file_name):
         text_y_data = np.max(drug_data.num_days_on_treatment) * 1.65
     drug_fig.text(-0.25,text_y_data,'n='+str(p53_pred_val_cnts['p53_wt']),size='small',color='black',weight='semibold')
     drug_fig.text(1.03,text_y_data,'n='+str(p53_pred_val_cnts['p53_mut']),size='small',color='black',weight='semibold')
-    plt.savefig('treatment_boxplots/'+ file_name +'_rf.jpg',format='jpeg',dpi=300,bbox_inches='tight')
+    plt.savefig('results/treatment_boxplots/'+ file_name +'_rf.jpg',format='jpeg',dpi=300,bbox_inches='tight')
 
 
 def make_trtmnt_p53_status_bxplt(drug_data, drug_group, file_name):
@@ -102,7 +79,7 @@ def make_trtmnt_p53_status_bxplt(drug_data, drug_group, file_name):
         text_y_data = np.max(drug_data.num_days_on_treatment) * 1.65
     drug_fig2.text(-0.25,text_y_data,'n='+str(p53_stat_val_cnts['p53_wt']),size='small',color='black',weight='semibold')
     drug_fig2.text(1.03,text_y_data,'n='+str(p53_stat_val_cnts['p53_mut']),size='small',color='black',weight='semibold')
-    plt.savefig('treatment_boxplots/'+ file_name +'_tru_lab.jpg',format='jpeg',dpi=300,bbox_inches='tight')
+    plt.savefig('results/treatment_boxplots/'+ file_name +'_tru_lab.jpg',format='jpeg',dpi=300,bbox_inches='tight')
 
 
 # function to combine the boxplots
@@ -117,4 +94,4 @@ def make_comb_graph(rf_imgs, tl_imgs, i):
 
     all_six = np.vstack([rf_imgs_comb, tru_lab_imgs_comb])
     all_six = Image.fromarray(all_six)
-    all_six.save('RF_and_TruLab_same'+i+'.jpg', quality=400)
+    all_six.save('results/RF_and_TruLab_same'+i+'.jpg', quality=400)

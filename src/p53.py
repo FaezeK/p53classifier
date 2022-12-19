@@ -15,16 +15,26 @@ import oob
 from sklearn.ensemble import RandomForestClassifier
 
 # read expression datasets
-pog_tpm_pr = pd.read_csv('POG_expr_prcssd.txt', delimiter = '\t', header=0)
-tcga_tpm_pr = pd.read_csv('TCGA_expr_prcssd.txt', delimiter='\t', header=0)
+pog_tpm_pr = pd.read_csv(snakemake.input.pog_expr_prcssd, delimiter = '\t', header=0)
+tcga_tpm_pr = pd.read_csv(snakemake.input.tcga_expr_prcssd, delimiter='\t', header=0)
 
 # read mutation datasets
-pog_snv_pr = pd.read_csv('POG_snv_prcssd.txt', delimiter='\t', header=0)
-tcga_snv_pr = pd.read_csv('TCGA_snv_prcssd.txt', delimiter='\t', header=0)
+pog_snv_pr = pd.read_csv(snakemake.input.pog_snv_prcssd, delimiter='\t', header=0)
+tcga_snv_pr = pd.read_csv(snakemake.input.tcga_snv_prcssd, delimiter='\t', header=0)
 
 # read metadata
-pog_meta_pr = pd.read_csv('POG_meta_prcssd.txt', delimiter = '\t', header=0) # POG metadata
-tcga_type_df = pd.read_csv('TCGA_types.txt', delimiter='\t', header=0) # TCGA metadata
+pog_meta_pr = pd.read_csv(snakemake.input.pog_meta_prcssd, delimiter = '\t', header=0) # POG metadata
+tcga_type_df = pd.read_csv(snakemake.input.tcga_types, delimiter='\t', header=0) # TCGA metadata
+
+# get the threshold found in previous step
+num_important_genes = pd.read_csv(snakemake.input.num_important_genes, header=None)
+num_important_genes = num_important_genes.values[0][0]
+
+# get the best hyperparameters
+pog_set_best_hp = pd.read_csv(snakemake.input.pog_set_best_hyperparam, delimiter='\t', header=0)
+tcga_set_best_hp = pd.read_csv(snakemake.input.tcga_set_best_hyperparam, delimiter='\t', header=0)
+both_sets_best_hp = pd.read_csv(snakemake.input.both_sets_best_hyperparam, delimiter='\t', header=0)
+
 print('The input files have been read')
 print('')
 
@@ -36,6 +46,10 @@ tcga_feature_matrix, tcga_p53_labels = p53h.make_X_y(tcga_tpm_impactful_p53_mut,
 pog_feature_matrix, pog_p53_labels = p53h.make_X_y(pog_tpm_p53_impactful_mut, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
 merged_feature_matrix, merged_p53_labels = p53h.make_X_y_merged(tcga_tpm_impactful_p53_mut, pog_tpm_p53_impactful_mut, tcga_tpm_wt_p53, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
 
+tcga_feature_matrix = tcga_feature_matrix.set_index('sample_id')
+pog_feature_matrix = pog_feature_matrix.set_index('sample_id')
+merged_feature_matrix = merged_feature_matrix.set_index('sample_id')
+
 ###############################################################################################
 ###############################################################################################
 ############################## Random Forest Overall Performance ##############################
@@ -43,9 +57,17 @@ merged_feature_matrix, merged_p53_labels = p53h.make_X_y_merged(tcga_tpm_impactf
 ###############################################################################################
 
 # obtain random forest predictions on TCGA, POG, and merged datasets in a 5-fold CV analysis
-tcga_all_pred_df, tcga_all_prob, tcga_true_label_prob = fcv.predict_5_fold_cv(tcga_feature_matrix, tcga_p53_labels, 50, 25, 2)
-pog_all_pred_df, pog_all_prob, pog_true_label_prob = fcv.predict_5_fold_cv(pog_feature_matrix, pog_p53_labels, 100, 50, 1)
-merged_all_pred_df, merged_all_prob, merged_true_label_prob = fcv.predict_5_fold_cv(merged_feature_matrix, merged_p53_labels, 50, 2, 2)
+tcga_all_pred_df, tcga_all_prob, tcga_true_label_prob = fcv.predict_5_fold_cv(tcga_feature_matrix, tcga_p53_labels, max_depth=tcga_set_best_hp.max_depth,
+                                                                              max_features=tcga_set_best_hp.max_features, max_smpls=tcga_set_best_hp.max_samples,
+                                                                              min_smpl_split=tcga_set_best_hp.min_sample_split, min_smpl_leaf=tcga_set_best_hp.min_sample_leaf)
+pog_all_pred_df, pog_all_prob, pog_true_label_prob = fcv.predict_5_fold_cv(pog_feature_matrix, pog_p53_labels, max_depth=pog_set_best_hp.max_depth,
+                                                                            max_features=pog_set_best_hp.max_features, max_smpls=pog_set_best_hp.max_samples,
+                                                                            min_smpl_split=pog_set_best_hp.min_sample_split, min_smpl_leaf=pog_set_best_hp.min_sample_leaf)
+merged_all_pred_df, merged_all_prob, merged_true_label_prob = fcv.predict_5_fold_cv(merged_feature_matrix, merged_p53_labels, max_depth=both_sets_best_hp.max_depth,
+                                                                                    max_features=both_sets_best_hp.max_features, max_smpls=both_sets_best_hp.max_samples,
+                                                                                    min_smpl_split=both_sets_best_hp.min_sample_split, min_smpl_leaf=both_sets_best_hp.min_sample_leaf)
+
+merged_all_pred_df.to_csv(snakemake.output.rf_pred_on_merged, sep='\t', index=False)
 
 # random forest performance (make the AUROC and AUPRC graphs)
 fig, axes =plt.subplots(3, 2, figsize=(12, 18), dpi=300)
@@ -88,7 +110,7 @@ both_auroc = sklearn.metrics.roc_auc_score(merged_all_pred_df.p53_status, merged
 axes[2,0].text(0.20, 0.60, 'AUROC='+str(round(both_auroc, 2)))
 axes[2,1].text(0.50, 0.60, 'AUPRC='+str(round(both_auprc, 2)))
 
-fig.savefig('auroc_auprc.jpg',format='jpeg',dpi=300,bbox_inches='tight')
+fig.savefig(snakemake.output.auroc_auprc,format='jpeg',dpi=300,bbox_inches='tight')
 
 ###############################################################################################
 ###############################################################################################
@@ -97,10 +119,12 @@ fig.savefig('auroc_auprc.jpg',format='jpeg',dpi=300,bbox_inches='tight')
 ###############################################################################################
 
 tcga_cancer_types_performance = fcv.performance_tcga_cancer_types(tcga_all_pred_df, tcga_type_df)
-tcga_cancer_types_performance.to_csv('results/TCGA_cancer_types_metrics.txt', sep='\t', index=False)
+tcga_cancer_types_performance.to_csv(snakemake.output.TCGA_cancer_types_metrics, sep='\t', index=False)
 
 # compare performance when all samples are used to train the RF vs when each cancer type samples are used
-tcga_cancer_types_oob = oob.evaluate_RF_on_each_cancer_type(tcga_all_pred_df, tcga_type_df, tcga_tpm_pr, tcga_snv_pr)
+tcga_cancer_types_oob = oob.evaluate_RF_on_each_cancer_type(tcga_all_pred_df, tcga_type_df, tcga_tpm_pr, tcga_snv_pr, max_depth=both_sets_best_hp.max_depth,
+                                                            max_features=both_sets_best_hp.max_features, max_samples=both_sets_best_hp.max_samples,
+                                                            min_samples_split=both_sets_best_hp.min_samples_split, min_samples_leaf=both_sets_best_hp.min_samples_leaf)
 tcga_cancer_types_accuracy_oob = pd.merge(tcga_cancer_types_performance, tcga_cancer_types_oob, on='type')
 
 cancer_type_abbv_df = oob.make_abbv(tcga_type_df)
@@ -116,7 +140,7 @@ oob_vs_accr_plot = sns.lineplot(data=tcga_cancer_types_accuracy_oob_abbv, marker
 plt.xticks(rotation=90)
 plt.xlabel('Cancer Type')
 plt.ylabel('Mean Accuracy and OOB Scores')
-fig.savefig('accr_vs_oob_plot.jpg',format='jpeg',dpi=400,bbox_inches='tight')
+fig.savefig(snakemake.output.accr_vs_oob_plot,format='jpeg',dpi=400,bbox_inches='tight')
 
 ###############################################################################################
 ###############################################################################################
@@ -170,7 +194,7 @@ axes[1,1].set_title('D', fontsize=22)
 axes[1,1].title.set_position([-0.1, 1.1])
 
 fig.tight_layout()
-fig.savefig('pred_prob_all4.jpg',format='jpeg',dpi=300,bbox_inches='tight')
+fig.savefig(snakemake.output.pred_prob_all4,format='jpeg',dpi=300,bbox_inches='tight')
 
 # extract the mispredicted samples with high Probabilities
 merged_mis_gt95 = merged_all_pred_df[(merged_all_pred_df.pred_crrctness=='mispredicted') & (merged_all_pred_df.pred_prob > 0.95)]
@@ -179,7 +203,7 @@ merged_mis_gt95 = merged_mis_gt95.sort_values(by='pred_prob', ascending=False)
 merged_mis_gt95 = merged_mis_gt95.rename(columns={"expr_sa_ids": "sample_id"})
 merged_mis_gt95_w_type = pd.merge(merged_mis_gt95, tcga_type_df, on='sample_id')
 merged_mis_gt95_w_type = merged_mis_gt95_w_type.sort_values(by='type')
-merged_mis_gt95_w_type.to_csv('results/outliers.txt', sep='\t', index=False)
+merged_mis_gt95_w_type.to_csv(snakemake.output.outliers, sep='\t', index=False)
 
 ###############################################################################################
 ###############################################################################################
@@ -187,7 +211,10 @@ merged_mis_gt95_w_type.to_csv('results/outliers.txt', sep='\t', index=False)
 ###############################################################################################
 ###############################################################################################
 
-clf = RandomForestClassifier(n_estimators=3000, max_depth=50, max_features=0.05, max_samples=0.99, min_samples_split=2, min_samples_leaf=2, n_jobs=40)
+clf = RandomForestClassifier(n_estimators=3000, max_depth=both_sets_best_hp.max_depth,
+                             max_features=both_sets_best_hp.max_features, max_samples=both_sets_best_hp.max_samples,
+                             min_samples_split=both_sets_best_hp.min_samples_split,
+                             min_samples_leaf=both_sets_best_hp.min_samples_leaf, n_jobs=40)
 clf.fit(merged_feature_matrix, merged_p53_labels)
 rand_f_scores = clf.feature_importances_
 indices = np.argsort(rand_f_scores)
@@ -195,7 +222,7 @@ rand_f_scores_sorted = pd.Series(np.sort(rand_f_scores))
 rand_forest_importance_scores_df = pd.DataFrame({'gene':pd.Series(merged_feature_matrix.columns[indices]), 'importance_score':rand_f_scores_sorted})
 rand_forest_importance_scores_df = rand_forest_importance_scores_df.sort_values(by='importance_score', ascending=False)
 
-top_67_genes = rand_forest_importance_scores_df.iloc[0:67,:]
+top_n_genes = rand_forest_importance_scores_df.iloc[0:num_important_genes,:]
 
 # combine the TCGA and POG sets of samples with impactful mutations
 both_tpm_impact_p53 = pog_tpm_p53_impactful_mut.append(tcga_tpm_impactful_p53_mut, ignore_index=True)
@@ -206,11 +233,11 @@ both_tpm_wt_p53 = pog_tpm_p53_wt.append(tcga_tpm_wt_p53, ignore_index=True)
 both_tpm_wt_p53 = both_tpm_wt_p53.set_index('sample_id')
 
 # extract the mutation rates and modification in expression in presence of p53 mutations
-# for the top 67 genes
+# for the top genes
 #pd.set_option('display.max_rows', 500)
 top_genes_mut_rate_n_reg_stat = pd.DataFrame({'gene':['a'],'imp_score':[-1.0],'mut_rate_tcga':[-1],'mut_rate_pog':[-1],'reg_stat':['up_or_down']})
 
-for i in top_67_genes.gene:
+for i in top_n_genes.gene:
     i_p53_mut = both_tpm_impact_p53[i]
     i_p53_wt = both_tpm_wt_p53[i]
 
@@ -234,31 +261,44 @@ for i in top_67_genes.gene:
     g_mut_rate_tcga = round((len(tcga_snv_pr[tcga_snv_pr.gene_id==g].donor_id.unique()) / len(tcga_snv_pr.donor_id.unique())) * 100, ndigits=2)
     g_mut_rate_pog = round((len(pog_snv_pr[pog_snv_pr.gene_id==g].sample_id.unique()) / len(pog_snv_pr.sample_id.unique())) * 100, ndigits=2)
 
-    scr = top_67_genes.importance_score[top_67_genes.gene==i].iloc[0]
+    scr = top_n_genes.importance_score[top_n_genes.gene==i].iloc[0]
 
     i_row = pd.Series({'gene':g,'imp_score':scr,'mut_rate_tcga':g_mut_rate_tcga,'mut_rate_pog':g_mut_rate_pog,'reg_stat':reg_stat})
     top_genes_mut_rate_n_reg_stat = top_genes_mut_rate_n_reg_stat.append(i_row, ignore_index=True)
 
 top_genes_mut_rate_n_reg_stat = top_genes_mut_rate_n_reg_stat[top_genes_mut_rate_n_reg_stat.gene != 'a']
-top_genes_mut_rate_n_reg_stat.to_csv('top67_genes_w_mut_rate_reg_stat.txt', sep='\t', index=False)
+top_genes_mut_rate_n_reg_stat.to_csv(snakemake.output.top_genes_w_mut_rate_reg_stat, sep='\t', index=False)
 
 # boxplots of expr for the top 10 genes
+top_gene_1 = top_genes_mut_rate_n_reg_stat.gene.iloc[0] + '_'
+top_gene_2 = top_genes_mut_rate_n_reg_stat.gene.iloc[1] + '_'
+top_gene_3 = top_genes_mut_rate_n_reg_stat.gene.iloc[2] + '_'
+top_gene_4 = top_genes_mut_rate_n_reg_stat.gene.iloc[3] + '_'
+top_gene_5 = top_genes_mut_rate_n_reg_stat.gene.iloc[4] + '_'
+top_gene_6 = top_genes_mut_rate_n_reg_stat.gene.iloc[5] + '_'
+top_gene_7 = top_genes_mut_rate_n_reg_stat.gene.iloc[6] + '_'
+top_gene_8 = top_genes_mut_rate_n_reg_stat.gene.iloc[7] + '_'
+top_gene_9 = top_genes_mut_rate_n_reg_stat.gene.iloc[8] + '_'
+top_gene_10 = top_genes_mut_rate_n_reg_stat.gene.iloc[9] + '_'
+
 sns.set_style("whitegrid")
 fig, axes =plt.subplots(5, 2, figsize=(12, 26), dpi=400)
 sns.set_style("whitegrid")
 
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'EDA2R_ENSG00000131080', axes[0,0])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'RPS27L_ENSG00000185088', axes[0,1])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'MDM2_ENSG00000135679', axes[1,0])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'MYBL2_ENSG00000101057', axes[1,1])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'UBE2C_ENSG00000175063', axes[2, 0])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'CDC20_ENSG00000117399', axes[2,1])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'RP11-115D19.1_ENSG00000251095', axes[3,0])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'FAM83D_ENSG00000101447', axes[3,1])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'RP11-611O2.5_ENSG00000257181', axes[4,0])
-p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, 'DDB2_ENSG00000134574', axes[4,1])
+full_gene_names = both_tpm_wt_p53.columns
 
-fig.savefig('top_10_expr.jpg',format='jpeg',dpi=400,bbox_inches='tight')
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_1)][0], axes[0,0])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_2)][0], axes[0,1])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_3)][0], axes[1,0])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_4)][0], axes[1,1])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_5)][0], axes[2, 0])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_6)][0], axes[2,1])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_7)][0], axes[3,0])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_8)][0], axes[3,1])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_9)][0], axes[4,0])
+p53h.gene_expr_boxplot_mutVsWt_multi(both_tpm_impact_p53, both_tpm_wt_p53, full_gene_names[full_gene_names.str.startswith(top_gene_10)][0], axes[4,1])
+
+fig.savefig(snakemake.output.top_10_expr,format='jpeg',dpi=400,bbox_inches='tight')
 
 ###############################################################################################
 ###############################################################################################
@@ -267,6 +307,7 @@ fig.savefig('top_10_expr.jpg',format='jpeg',dpi=400,bbox_inches='tight')
 ###############################################################################################
 
 both_p53_expr_test = pd.concat([tcga_tpm_not_impactful_p53_mut, pog_tpm_p53_not_impact_mut])
+both_p53_expr_test = both_p53_expr_test.set_index('sample_id')
 
 not_impactful_p53_predictions = clf.predict(both_p53_expr_test)
 not_impactful_p53_predictions_df = pd.DataFrame({'sample_id':both_p53_expr_test.index, 'pred':not_impactful_p53_predictions})
@@ -278,4 +319,4 @@ all_mut_effect = pd.concat([tcga_mut_effect, pog_mut_effect])
 
 not_impactful_p53_predictions_df = pd.merge(not_impactful_p53_predictions_df, all_mut_effect, on='sample_id')
 not_impactful_p53_predictions_df = not_impactful_p53_predictions_df.drop_duplicates()
-not_impactful_p53_predictions_df.to_csv('not_impact_mut_pred.txt', sep='\t', index=False)
+not_impactful_p53_predictions_df.to_csv(snakemake.output.not_impact_mut_pred, sep='\t', index=False)

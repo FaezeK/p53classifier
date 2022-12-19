@@ -8,18 +8,18 @@ import process_mut
 import make_pca
 
 # read expression datasets
-pog_tpm = pd.read_csv('POG_TPM_matrix.txt', delimiter = '\t', header=0)
-tcga_tpm = pd.read_csv('tcga_rsem_gene_tpm.txt', delimiter='\t', header=0)
+pog_tpm = pd.read_csv(snakemake.input.pog_tpm, delimiter='\t', header=0)
+tcga_tpm = pd.read_csv(snakemake.input.tcga_tpm, delimiter='\t', header=0)
 
 # read mutation datasets
-pog_snv = pd.read_csv('POG_small_mutations.txt', delimiter='\t', header=0)
-tcga_snv = pd.read_csv('mc3.v0.2.8.PUBLIC.txt', delimiter='\t', header=0)
+pog_snv = pd.read_csv(snakemake.input.pog_snv, delimiter='\t', header=0)
+tcga_snv = pd.read_csv(snakemake.input.tcga_snv, delimiter='\t', header=0)
 
 # read metadata
-common_genes = pd.read_csv('common_genes.txt', delimiter = '\t', header=0) # list of common genes between POG and TCGA datasets
-pog_meta = pd.read_csv('pog_cohort_details.txt', delimiter = '\t', header=0) # POG metadata
-tss = pd.read_csv('tissueSourceSite.tsv', delimiter='\t', header=0) # TCGA metadata
-print('The input files have been read . . .')
+common_genes = pd.read_csv(snakemake.input.cmmn_genes, delimiter = '\t', header=0) # list of common genes between POG and TCGA datasets
+pog_meta = pd.read_csv(snakemake.input.pog_meta, delimiter = '\t', header=0) # POG metadata
+tss = pd.read_csv(snakemake.input.tss, delimiter='\t', header=0, keep_default_na=False) # TCGA metadata
+print('The input files have been read')
 print('')
 
 # process expr data
@@ -64,11 +64,9 @@ make_pca.generate_PCA_merged(tcga_actual_tpm_ucsc, pog_tpm_trnspsd)
 print('PCA plots are made . . .')
 print('')
 
-tcga_actual_tpm_ucsc.to_csv('TCGA_expr_prcssd.txt', sep='\t', index=False)
-tcga_snv.to_csv('TCGA_snv_prcssd.txt', sep='\t', index=False)
-tcga_type_df.to_csv('TCGA_types.txt', sep='\t', index=False)
-pog_tpm_trnspsd.to_csv('POG_expr_prcssd.txt', sep='\t', index=False)
-pog_snv.to_csv('POG_snv_prcssd.txt', sep='\t', index=False)
-pog_meta_fltrd.to_csv('POG_meta_prcssd.txt', sep='\t', index=False)
-
-print('Processed files have been made in the current directory!')
+tcga_actual_tpm_ucsc.to_csv(snakemake.output.tcga_expr_prcssd, sep='\t', index=False)
+tcga_snv.to_csv(snakemake.output.tcga_snv_prcssd, sep='\t', index=False)
+tcga_type_df.to_csv(snakemake.output.tcga_types, sep='\t', index=False)
+pog_tpm_trnspsd.to_csv(snakemake.output.pog_expr_prcssd, sep='\t', index=False)
+pog_snv.to_csv(snakemake.output.pog_snv_prcssd, sep='\t', index=False)
+pog_meta_fltrd.to_csv(snakemake.output.pog_meta_prcssd, sep='\t', index=False)

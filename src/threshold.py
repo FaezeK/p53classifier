@@ -11,16 +11,20 @@ import p53_helper as p53h
 from sklearn.ensemble import RandomForestClassifier
 
 # read expression datasets
-pog_tpm_pr = pd.read_csv('POG_expr_prcssd.txt', delimiter = '\t', header=0)
-tcga_tpm_pr = pd.read_csv('TCGA_expr_prcssd.txt', delimiter='\t', header=0)
+pog_tpm_pr = pd.read_csv(snakemake.input.pog_expr_prcssd, delimiter = '\t', header=0)
+tcga_tpm_pr = pd.read_csv(snakemake.input.tcga_expr_prcssd, delimiter='\t', header=0)
 
 # read mutation datasets
-pog_snv_pr = pd.read_csv('POG_snv_prcssd.txt', delimiter='\t', header=0)
-tcga_snv_pr = pd.read_csv('TCGA_snv_prcssd.txt', delimiter='\t', header=0)
+pog_snv_pr = pd.read_csv(snakemake.input.pog_snv_prcssd, delimiter='\t', header=0)
+tcga_snv_pr = pd.read_csv(snakemake.input.tcga_snv_prcssd, delimiter='\t', header=0)
 
 # read metadata
-pog_meta_pr = pd.read_csv('POG_meta_prcssd.txt', delimiter = '\t', header=0) # POG metadata
-tcga_type_df = pd.read_csv('TCGA_types.txt', delimiter='\t', header=0) # TCGA metadata
+pog_meta_pr = pd.read_csv(snakemake.input.pog_meta_prcssd, delimiter = '\t', header=0) # POG metadata
+tcga_type_df = pd.read_csv(snakemake.input.tcga_types, delimiter='\t', header=0) # TCGA metadata
+
+# get the best hyperparameters
+both_sets_best_hyperparam = pd.read_csv(snakemake.input.both_sets_best_hyperparam, delimiter='\t', header=0)
+
 print('The input files have been read')
 print('')
 
@@ -34,7 +38,9 @@ X = X.set_index('sample_id')
 print("Input files are read and processed.")
 print("Algorithm training starts . . . ")
 
-clf = RandomForestClassifier(n_estimators=3000, max_depth=50, max_features=0.05, max_samples=0.99, min_samples_split=2, min_samples_leaf=2, n_jobs=40)
+clf = RandomForestClassifier(n_estimators=3000, max_depth=both_sets_best_hyperparam.max_depth, max_features=both_sets_best_hyperparam.max_features,
+                             max_samples=both_sets_best_hyperparam.max_samples, min_samples_split=both_sets_best_hyperparam.min_samples_split,
+                             min_samples_leaf=both_sets_best_hyperparam.min_samples_leaf, n_jobs=40)
 clf.fit(X,y)
 rand_f_scores = clf.feature_importances_
 indices = np.argsort(rand_f_scores)
@@ -88,8 +94,19 @@ plt.legend()
 plt.fill_between(rand_frst_imp_feat_scr_df2_copy.index, rand_frst_imp_feat_scr_df2_copy['mean']+rand_frst_imp_feat_scr_df2_copy.sd, rand_frst_imp_feat_scr_df2_copy['mean']-rand_frst_imp_feat_scr_df2_copy.sd, color='mediumslateblue')
 plt.xlabel('Gene Rank', fontsize=16)
 plt.ylabel('Importance (Gini) Score', fontsize=16)
-plt.savefig('TrueVsRandomScoresByRank.png', bbox_inches='tight', dpi=300)
+plt.savefig(snakemake.output.TrueVsRandomScoresByRank, bbox_inches='tight', dpi=300)
 plt.close()
+
+##########################################
+# find the threshold value
+true_score_compared_to_mean = rand_frst_imp_feat_scr_df2_copy.true_lab > rand_frst_imp_feat_scr_df2_copy['mean']
+first_position_mean_gt_true_score = (true_score_compared_to_mean==False).idxmax()
+# print(first_position_mean_gt_true_score)
+f = open(snakemake.output.num_important_genes, "w")
+f.write(str(first_position_mean_gt_true_score))
+f.write('')
+f.close()
+##########################################
 
 rand_frst_imp_feat_scr_df2_copy2 = rand_frst_imp_feat_scr_df2_copy.iloc[30:100,:]
 plt.figure(figsize=(10,7))
@@ -97,7 +114,7 @@ plt.plot(rand_frst_imp_feat_scr_df2_copy2.index, rand_frst_imp_feat_scr_df2_copy
 plt.plot(rand_frst_imp_feat_scr_df2_copy2.index, rand_frst_imp_feat_scr_df2_copy2['mean'], label='Mean shuffled labels', color='indigo')
 plt.legend()
 plt.fill_between(rand_frst_imp_feat_scr_df2_copy2.index, rand_frst_imp_feat_scr_df2_copy2['mean']+rand_frst_imp_feat_scr_df2_copy2.sd, rand_frst_imp_feat_scr_df2_copy2['mean']-rand_frst_imp_feat_scr_df2_copy2.sd, color='mediumslateblue')
-plt.savefig('TrueVsRandomScoresByRankZoomedIn.png', bbox_inches='tight', dpi=300)
+plt.savefig(snakemake.output.TrueVsRandomScoresByRankZoomedIn, bbox_inches='tight', dpi=300)
 plt.close()
 
 rand_frst_imp_feat_scr_df2_copy2 = rand_frst_imp_feat_scr_df2_copy.iloc[60:75,:]
@@ -106,7 +123,7 @@ plt.plot(rand_frst_imp_feat_scr_df2_copy2.index, rand_frst_imp_feat_scr_df2_copy
 plt.plot(rand_frst_imp_feat_scr_df2_copy2.index, rand_frst_imp_feat_scr_df2_copy2['mean'], label='Mean shuffled labels', color='indigo')
 plt.legend()
 plt.fill_between(rand_frst_imp_feat_scr_df2_copy2.index, rand_frst_imp_feat_scr_df2_copy2['mean']+rand_frst_imp_feat_scr_df2_copy2.sd, rand_frst_imp_feat_scr_df2_copy2['mean']-rand_frst_imp_feat_scr_df2_copy2.sd, color='mediumslateblue')
-plt.savefig('TrueVsRandomScoresByRankZoomedInMore.png', bbox_inches='tight', dpi=300)
+plt.savefig(snakemake.output.TrueVsRandomScoresByRankZoomedInMore, bbox_inches='tight', dpi=300)
 plt.close()
 
 print("Graphs are made")

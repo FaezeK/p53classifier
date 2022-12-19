@@ -14,16 +14,16 @@ from sklearn.model_selection import StratifiedKFold
 start_time = timeit.default_timer()
 
 # read expression datasets
-pog_tpm_pr = pd.read_csv('POG_expr_prcssd.txt', delimiter = '\t', header=0)
-tcga_tpm_pr = pd.read_csv('TCGA_expr_prcssd.txt', delimiter='\t', header=0)
+pog_tpm_pr = pd.read_csv(snakemake.input.pog_expr_prcssd, delimiter = '\t', header=0)
+tcga_tpm_pr = pd.read_csv(snakemake.input.tcga_expr_prcssd, delimiter='\t', header=0)
 
 # read mutation datasets
-pog_snv_pr = pd.read_csv('POG_snv_prcssd.txt', delimiter='\t', header=0)
-tcga_snv_pr = pd.read_csv('TCGA_snv_prcssd.txt', delimiter='\t', header=0)
+pog_snv_pr = pd.read_csv(snakemake.input.pog_snv_prcssd, delimiter='\t', header=0)
+tcga_snv_pr = pd.read_csv(snakemake.input.tcga_snv_prcssd, delimiter='\t', header=0)
 
 # read metadata
-pog_meta_pr = pd.read_csv('POG_meta_prcssd.txt', delimiter = '\t', header=0) # POG metadata
-tss = pd.read_csv('tissueSourceSite.tsv', delimiter='\t', header=0) # TCGA metadata
+pog_meta_pr = pd.read_csv(snakemake.input.pog_meta_prcssd, delimiter = '\t', header=0) # POG metadata
+tss = pd.read_csv(snakemake.input.tss, delimiter='\t', header=0) # TCGA metadata
 print('The input files have been read')
 print('')
 
@@ -52,7 +52,7 @@ both_grid_result = gs.findHyperparam(both_X_train, both_y_train)
 ### Write the Grid Search results for POG to a file and test on validation set ###
 ##################################################################################
 
-f = open('results/pog_hyper_param_results.txt', 'w')
+f = open(snakemake.output.pog_hyper_param_results, 'w')
 print('best score:', file=f)
 print(pog_grid_result.best_score_, file=f)
 print('', file=f)
@@ -66,6 +66,12 @@ pog_max_samples = pog_grid_result.best_params_.get('max_samples')
 pog_min_samples_leaf = pog_grid_result.best_params_.get('min_samples_leaf')
 pog_min_samples_split = pog_grid_result.best_params_.get('min_samples_split')
 pog_n_estimators = pog_grid_result.best_params_.get('n_estimators')
+
+pog_best_params = pd.DataFrame({'max_depth':pog_max_depth, 'max_features':pog_max_features,
+                                 'max_samples':pog_max_samples, 'min_samples_leaf':pog_min_samples_leaf,
+                                 'min_samples_split':pog_min_samples_split, 'n_estimators':pog_n_estimators})
+
+pog_best_params.to_csv(snakemake.output.pog_set_best_hyperparam, sep='\t', index=False)
 
 clf = RandomForestClassifier(n_estimators=pog_n_estimators, max_depth=pog_max_depth,
                              max_features=pog_max_features, max_samples=pog_max_samples, n_jobs=40)
@@ -93,7 +99,7 @@ print(classification_report(pog_p53_pred_df2.p53_status, pog_p53_pred_df2.predic
 ### Write the Grid Search results for TCGA to a file and test on validation set ###
 ###################################################################################
 
-f2 = open('results/tcga_hyper_param_results.txt', 'w')
+f2 = open(snakemake.output.tcga_hyper_param_results, 'w')
 print('best score:', file=f2)
 print(tcga_grid_result.best_score_, file=f2)
 print('', file=f2)
@@ -107,6 +113,12 @@ tcga_max_samples = tcga_grid_result.best_params_.get('max_samples')
 tcga_min_samples_leaf = tcga_grid_result.best_params_.get('min_samples_leaf')
 tcga_min_samples_split = tcga_grid_result.best_params_.get('min_samples_split')
 tcga_n_estimators = tcga_grid_result.best_params_.get('n_estimators')
+
+tcga_best_params = pd.DataFrame({'max_depth':tcga_max_depth, 'max_features':tcga_max_features,
+                                 'max_samples':tcga_max_samples, 'min_samples_leaf':tcga_min_samples_leaf,
+                                 'min_samples_split':tcga_min_samples_split, 'n_estimators':tcga_n_estimators})
+
+tcga_best_params.to_csv(snakemake.output.tcga_set_best_hyperparam, sep='\t', index=False)
 
 clf3 = RandomForestClassifier(n_estimators=tcga_n_estimators, max_depth=tcga_max_depth,
                               max_features=tcga_max_features, max_samples=tcga_max_samples, n_jobs=40)
@@ -134,7 +146,7 @@ print(classification_report(tcga_p53_pred_df2.p53_status, tcga_p53_pred_df2.pred
 ### Write the Grid Search results for both to a file and test on validation set ###
 ###################################################################################
 
-f3 = open('results/both_hyper_param_results.txt', 'w')
+f3 = open(snakemake.output.both_hyper_param_results, 'w')
 print('best score:', file=f3)
 print(both_grid_result.best_score_, file=f3)
 print('', file=f3)
@@ -148,6 +160,12 @@ both_max_samples = both_grid_result.best_params_.get('max_samples')
 both_min_samples_leaf = both_grid_result.best_params_.get('min_samples_leaf')
 both_min_samples_split = both_grid_result.best_params_.get('min_samples_split')
 both_n_estimators = both_grid_result.best_params_.get('n_estimators')
+
+both_best_params = pd.DataFrame({'max_depth':both_max_depth, 'max_features':both_max_features,
+                                 'max_samples':both_max_samples, 'min_samples_leaf':both_min_samples_leaf,
+                                 'min_samples_split':both_min_samples_split, 'n_estimators':both_n_estimators})
+
+both_best_params.to_csv(snakemake.output.both_sets_best_hyperparam, sep='\t', index=False)
 
 clf5 = RandomForestClassifier(n_estimators=both_n_estimators, max_depth=both_max_depth,
                               max_features=both_max_features, max_samples=both_max_samples, n_jobs=40)

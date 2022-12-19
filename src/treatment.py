@@ -18,32 +18,17 @@ import p53_helper as p53h
 import treatment_helper as th
 from PIL import Image
 
-# read expression datasets
-pog_tpm_pr = pd.read_csv('POG_expr_prcssd.txt', delimiter = '\t', header=0)
-tcga_tpm_pr = pd.read_csv('TCGA_expr_prcssd.txt', delimiter='\t', header=0)
-
-# read mutation datasets
-pog_snv_pr = pd.read_csv('POG_snv_prcssd.txt', delimiter='\t', header=0)
-tcga_snv_pr = pd.read_csv('TCGA_snv_prcssd.txt', delimiter='\t', header=0)
+# read results from rf predictions on the merged set
+both_p53_all_pred_df = pd.read_csv(snakemake.input.rf_pred_on_merged, delimiter='\t', header=0)
 
 # read treatment data
-pog_drugs = pd.read_csv('pog_drugs.tsv', delimiter = '\t', header=0)
+pog_drugs = pd.read_csv(snakemake.input.pog_drugs, delimiter = '\t', header=0)
 
 print('The input files have been read')
 print('')
 
 # add num of days on treatment to pog_drugs
 pog_drugs_pr = th.process_pog_drugs(pog_drugs)
-
-# make X and y matrices
-tcga_tpm_impactful_p53_mut, tcga_tpm_not_impactful_p53_mut, tcga_tpm_wt_p53 = p53h.find_tcga_p53_mut(tcga_tpm_pr, tcga_snv_pr)
-pog_tpm_p53_impactful_mut, pog_tpm_p53_not_impact_mut, pog_tpm_p53_wt = p53h.find_pog_p53_mut(pog_tpm_pr, pog_snv_pr)
-
-X, y = p53h.make_X_y_merged(tcga_tpm_impactful_p53_mut, pog_tpm_p53_impactful_mut, tcga_tpm_wt_p53, pog_tpm_p53_wt, 'p53_mut', 'p53_wt')
-X = X.set_index('sample_id')
-
-# predict labels in a 5-fold CV
-both_p53_all_pred_df = th.predict_labs_5cv(X, y)
 
 # combine prediction and treatment data
 pog_drugs = pog_drugs.rename(columns={"participant_project_identifier": "expr_sa_ids"})
@@ -230,15 +215,17 @@ th.make_trtmnt_RF_pred_bxplt(pog_drugs_w_pred_vnc_lklds, 'VAs', 'vinca_alkal')
 th.make_trtmnt_p53_status_bxplt(pog_drugs_w_pred_vnc_lklds, 'VAs', 'vinca_alkal')
 
 # put the graphs where RF performs better than true label together
-rf_images = [Image.open(x) for x in ['treatment_boxplots/platinum_rf.jpg',
-                                    'treatment_boxplots/taxanes_rf.jpg']]
+dir='results/treatment_boxplots/'
+
+rf_images = [Image.open(x) for x in [dir+'platinum_rf.jpg',
+                                    dir+'taxanes_rf.jpg']]
 
 rf_min_shape = sorted([(np.sum(i.size), i.size) for i in rf_images])[0][1]
 rf_imgs_comb = np.hstack(list(np.asarray(i.resize(rf_min_shape)) for i in rf_images))
 rf_imgs_comb = Image.fromarray(rf_imgs_comb)
 
-tru_lab_images = [Image.open(x) for x in ['treatment_boxplots/platinum_tru_lab.jpg',
-                                        'treatment_boxplots/taxanes_tru_lab.jpg']]
+tru_lab_images = [Image.open(x) for x in [dir+'platinum_tru_lab.jpg',
+                                        dir+'taxanes_tru_lab.jpg']]
 
 tru_lab_min_shape = sorted([(np.sum(i.size), i.size) for i in tru_lab_images])[0][1]
 tru_lab_imgs_comb = np.hstack(list(np.asarray(i.resize(tru_lab_min_shape)) for i in tru_lab_images))
@@ -246,21 +233,19 @@ tru_lab_imgs_comb = Image.fromarray(tru_lab_imgs_comb)
 
 all_four = np.vstack([rf_imgs_comb, tru_lab_imgs_comb])
 all_four = Image.fromarray(all_four)
-all_four.save('RF_better_clssfctn.jpg', quality=400)
+all_four.save(snakemake.output.RF_better_clssfctn, quality=400)
 
 # put the graphs where true label performs better than RF together
-epo_images = [Image.open(x) for x in ['treatment_boxplots/epothilones_rf.jpg',
-                                    'treatment_boxplots/epothilones_tru_lab.jpg']]
+epo_images = [Image.open(x) for x in [dir+'epothilones_rf.jpg',
+                                    dir+'epothilones_tru_lab.jpg']]
 
 epo_min_shape = sorted([(np.sum(i.size), i.size) for i in epo_images])[0][1]
 epo_imgs_comb = np.hstack(list(np.asarray(i.resize(epo_min_shape)) for i in epo_images))
 epo_imgs_comb = Image.fromarray(epo_imgs_comb)
 
-epo_imgs_comb.save('TruLab_better_clssfctn.jpg', quality=400)
+epo_imgs_comb.save(snakemake.output.TruLab_better_clssfctn, quality=400)
 
 # put all other graphs together
-dir='treatment_boxplots/'
-
 rf_images1 = [Image.open(x) for x in [dir+'alk_nhbtr_rf'+'.jpg',
                                     dir+'alkyl_agnts_rf'+'.jpg',
                                     dir+'anti_CTLA4_rf'+'.jpg']]

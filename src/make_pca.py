@@ -20,7 +20,8 @@ def extract_tcga_types(tcga_expr, tcga_meta):
         t_type = tcga_meta[tcga_meta['TSS Code']==code]['Study Name'].to_string(index=False)
         tcga_type.append(t_type)
 
-        tcga_type_df = pd.DataFrame({'sample_id':tcga_sample_ids, 'type':tcga_type})
+    tcga_type_df = pd.DataFrame({'sample_id':tcga_sample_ids, 'type':tcga_type})
+    tcga_type_df = tcga_type_df.reset_index(drop=True)
 
     return tcga_type_df
 
