@@ -67,9 +67,9 @@ pog_min_samples_leaf = pog_grid_result.best_params_.get('min_samples_leaf')
 pog_min_samples_split = pog_grid_result.best_params_.get('min_samples_split')
 pog_n_estimators = pog_grid_result.best_params_.get('n_estimators')
 
-pog_best_params = pd.DataFrame({'max_depth':pog_max_depth, 'max_features':pog_max_features,
-                                 'max_samples':pog_max_samples, 'min_samples_leaf':pog_min_samples_leaf,
-                                 'min_samples_split':pog_min_samples_split, 'n_estimators':pog_n_estimators})
+pog_best_params = pd.DataFrame({'max_depth':[pog_max_depth], 'max_features':[pog_max_features],
+                                 'max_samples':[pog_max_samples], 'min_samples_leaf':[pog_min_samples_leaf],
+                                 'min_samples_split':[pog_min_samples_split], 'n_estimators':[pog_n_estimators]})
 
 pog_best_params.to_csv(snakemake.output.pog_set_best_hyperparam, sep='\t', index=False)
 
@@ -114,9 +114,9 @@ tcga_min_samples_leaf = tcga_grid_result.best_params_.get('min_samples_leaf')
 tcga_min_samples_split = tcga_grid_result.best_params_.get('min_samples_split')
 tcga_n_estimators = tcga_grid_result.best_params_.get('n_estimators')
 
-tcga_best_params = pd.DataFrame({'max_depth':tcga_max_depth, 'max_features':tcga_max_features,
-                                 'max_samples':tcga_max_samples, 'min_samples_leaf':tcga_min_samples_leaf,
-                                 'min_samples_split':tcga_min_samples_split, 'n_estimators':tcga_n_estimators})
+tcga_best_params = pd.DataFrame({'max_depth':[tcga_max_depth], 'max_features':[tcga_max_features],
+                                 'max_samples':[tcga_max_samples], 'min_samples_leaf':[tcga_min_samples_leaf],
+                                 'min_samples_split':[tcga_min_samples_split], 'n_estimators':[tcga_n_estimators]})
 
 tcga_best_params.to_csv(snakemake.output.tcga_set_best_hyperparam, sep='\t', index=False)
 
@@ -161,9 +161,9 @@ both_min_samples_leaf = both_grid_result.best_params_.get('min_samples_leaf')
 both_min_samples_split = both_grid_result.best_params_.get('min_samples_split')
 both_n_estimators = both_grid_result.best_params_.get('n_estimators')
 
-both_best_params = pd.DataFrame({'max_depth':both_max_depth, 'max_features':both_max_features,
-                                 'max_samples':both_max_samples, 'min_samples_leaf':both_min_samples_leaf,
-                                 'min_samples_split':both_min_samples_split, 'n_estimators':both_n_estimators})
+both_best_params = pd.DataFrame({'max_depth':[both_max_depth], 'max_features':[both_max_features],
+                                 'max_samples':[both_max_samples], 'min_samples_leaf':[both_min_samples_leaf],
+                                 'min_samples_split':[both_min_samples_split], 'n_estimators':[both_n_estimators]})
 
 both_best_params.to_csv(snakemake.output.both_sets_best_hyperparam, sep='\t', index=False)
 
