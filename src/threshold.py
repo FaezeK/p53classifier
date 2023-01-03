@@ -38,9 +38,9 @@ X = X.set_index('sample_id')
 print("Input files are read and processed.")
 print("Algorithm training starts . . . ")
 
-clf = RandomForestClassifier(n_estimators=3000, max_depth=both_sets_best_hyperparam.max_depth, max_features=both_sets_best_hyperparam.max_features,
-                             max_samples=both_sets_best_hyperparam.max_samples, min_samples_split=both_sets_best_hyperparam.min_samples_split,
-                             min_samples_leaf=both_sets_best_hyperparam.min_samples_leaf, n_jobs=40)
+clf = RandomForestClassifier(n_estimators=3000, max_depth=both_sets_best_hyperparam.max_depth[0], max_features=both_sets_best_hyperparam.max_features[0],
+                             max_samples=both_sets_best_hyperparam.max_samples[0], min_samples_split=both_sets_best_hyperparam.min_samples_split[0],
+                             min_samples_leaf=both_sets_best_hyperparam.min_samples_leaf[0], n_jobs=40)
 clf.fit(X,y)
 rand_f_scores = clf.feature_importances_
 indices = np.argsort(rand_f_scores)
