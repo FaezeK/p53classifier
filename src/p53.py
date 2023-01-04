@@ -122,9 +122,9 @@ tcga_cancer_types_performance = fcv.performance_tcga_cancer_types(tcga_all_pred_
 tcga_cancer_types_performance.to_csv(snakemake.output.TCGA_cancer_types_metrics, sep='\t', index=False)
 
 # compare performance when all samples are used to train the RF vs when each cancer type samples are used
-tcga_cancer_types_oob = oob.evaluate_RF_on_each_cancer_type(tcga_all_pred_df, tcga_type_df, tcga_tpm_pr, tcga_snv_pr, max_depth=both_sets_best_hp.max_depth,
-                                                            max_features=both_sets_best_hp.max_features, max_samples=both_sets_best_hp.max_samples,
-                                                            min_samples_split=both_sets_best_hp.min_samples_split, min_samples_leaf=both_sets_best_hp.min_samples_leaf)
+tcga_cancer_types_oob = oob.evaluate_RF_on_each_cancer_type(tcga_all_pred_df, tcga_type_df, tcga_tpm_pr, tcga_snv_pr, max_depth=both_sets_best_hp.max_depth[0],
+                                                            max_features=both_sets_best_hp.max_features[0], max_samples=both_sets_best_hp.max_samples[0],
+                                                            min_samples_split=both_sets_best_hp.min_samples_split[0], min_samples_leaf=both_sets_best_hp.min_samples_leaf[0])
 tcga_cancer_types_accuracy_oob = pd.merge(tcga_cancer_types_performance, tcga_cancer_types_oob, on='type')
 
 cancer_type_abbv_df = oob.make_abbv(tcga_type_df)
@@ -211,10 +211,10 @@ merged_mis_gt95_w_type.to_csv(snakemake.output.outliers, sep='\t', index=False)
 ###############################################################################################
 ###############################################################################################
 
-clf = RandomForestClassifier(n_estimators=3000, max_depth=both_sets_best_hp.max_depth,
-                             max_features=both_sets_best_hp.max_features, max_samples=both_sets_best_hp.max_samples,
-                             min_samples_split=both_sets_best_hp.min_samples_split,
-                             min_samples_leaf=both_sets_best_hp.min_samples_leaf, n_jobs=40)
+clf = RandomForestClassifier(n_estimators=3000, max_depth=both_sets_best_hp.max_depth[0],
+                             max_features=both_sets_best_hp.max_features[0], max_samples=both_sets_best_hp.max_samples[0],
+                             min_samples_split=both_sets_best_hp.min_samples_split[0],
+                             min_samples_leaf=both_sets_best_hp.min_samples_leaf[0], n_jobs=40)
 clf.fit(merged_feature_matrix, merged_p53_labels)
 rand_f_scores = clf.feature_importances_
 indices = np.argsort(rand_f_scores)
