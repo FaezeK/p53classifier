@@ -57,15 +57,15 @@ merged_feature_matrix = merged_feature_matrix.set_index('sample_id')
 ###############################################################################################
 
 # obtain random forest predictions on TCGA, POG, and merged datasets in a 5-fold CV analysis
-tcga_all_pred_df, tcga_all_prob, tcga_true_label_prob = fcv.predict_5_fold_cv(tcga_feature_matrix, tcga_p53_labels, max_depth=tcga_set_best_hp.max_depth,
-                                                                              max_features=tcga_set_best_hp.max_features, max_smpls=tcga_set_best_hp.max_samples,
-                                                                              min_smpl_split=tcga_set_best_hp.min_sample_split, min_smpl_leaf=tcga_set_best_hp.min_sample_leaf)
-pog_all_pred_df, pog_all_prob, pog_true_label_prob = fcv.predict_5_fold_cv(pog_feature_matrix, pog_p53_labels, max_depth=pog_set_best_hp.max_depth,
-                                                                            max_features=pog_set_best_hp.max_features, max_smpls=pog_set_best_hp.max_samples,
-                                                                            min_smpl_split=pog_set_best_hp.min_sample_split, min_smpl_leaf=pog_set_best_hp.min_sample_leaf)
-merged_all_pred_df, merged_all_prob, merged_true_label_prob = fcv.predict_5_fold_cv(merged_feature_matrix, merged_p53_labels, max_depth=both_sets_best_hp.max_depth,
-                                                                                    max_features=both_sets_best_hp.max_features, max_smpls=both_sets_best_hp.max_samples,
-                                                                                    min_smpl_split=both_sets_best_hp.min_sample_split, min_smpl_leaf=both_sets_best_hp.min_sample_leaf)
+tcga_all_pred_df, tcga_all_prob, tcga_true_label_prob = fcv.predict_5_fold_cv(tcga_feature_matrix, tcga_p53_labels, max_depth=tcga_set_best_hp.max_depth[0],
+                                                                              max_features=tcga_set_best_hp.max_features[0], max_smpls=tcga_set_best_hp.max_samples[0],
+                                                                              min_smpl_split=tcga_set_best_hp.min_samples_split[0], min_smpl_leaf=tcga_set_best_hp.min_samples_leaf[0])
+pog_all_pred_df, pog_all_prob, pog_true_label_prob = fcv.predict_5_fold_cv(pog_feature_matrix, pog_p53_labels, max_depth=pog_set_best_hp.max_depth[0],
+                                                                            max_features=pog_set_best_hp.max_features[0], max_smpls=pog_set_best_hp.max_samples[0],
+                                                                            min_smpl_split=pog_set_best_hp.min_samples_split[0], min_smpl_leaf=pog_set_best_hp.min_samples_leaf[0])
+merged_all_pred_df, merged_all_prob, merged_true_label_prob = fcv.predict_5_fold_cv(merged_feature_matrix, merged_p53_labels, max_depth=both_sets_best_hp.max_depth[0],
+                                                                                    max_features=both_sets_best_hp.max_features[0], max_smpls=both_sets_best_hp.max_samples[0],
+                                                                                    min_smpl_split=both_sets_best_hp.min_samples_split[0], min_smpl_leaf=both_sets_best_hp.min_samples_leaf[0])
 
 merged_all_pred_df.to_csv(snakemake.output.rf_pred_on_merged, sep='\t', index=False)
 
