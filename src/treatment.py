@@ -16,6 +16,7 @@ import pandas as pd
 import numpy as np
 import p53_helper as p53h
 import treatment_helper as th
+import subprocess as sp
 from PIL import Image
 
 # read results from rf predictions on the merged set
@@ -38,6 +39,8 @@ pog_drugs_w_pred = pd.merge(both_p53_all_pred_df, pog_drugs, on='expr_sa_ids')
 drug_list = th.get_uniq_drugs(pog_drugs_w_pred)
 
 # make boxplots per drug group
+sp.run(['mkdir', 'results/treatment_boxplots'])
+
 # ALK inhibitors
 alk_nhbtrs_drugs = drug_list[drug_list.isin(['ALECTINIB','CERITINIB','CRIZOTINIB','LORLATINIB','BRIGATINIB'])]
 pog_drugs_w_pred_alk_nhbtrs = pog_drugs_w_pred[pog_drugs_w_pred['drug_treatment.drug_list'].str.contains('|'.join(alk_nhbtrs_drugs))]
