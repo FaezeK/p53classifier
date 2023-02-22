@@ -14,5 +14,5 @@ POG datasets are not publicly available.
 
 ## Workflow
 
-The workflow is visualized below:
+The workflow is visualized below: \
 ![plot](dag.pdf)
