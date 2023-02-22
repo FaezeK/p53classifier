@@ -11,3 +11,8 @@ After training and evaluating the model, the top features (genes) were extracted
 TCGA expression data (tcga_RSEM_gene_tpm) was downloaded on June 21, 2021 from: https://xenabrowser.net/ \
 TCGA mutation data (mc3.v0.2.8.PUBLIC.maf.gz) was downloaded on September 30, 2020 from: https://gdc.cancer.gov/about-data/publications/mc3-2017 \
 POG datasets are not publicly available.
+
+## Workflow
+
+The workflow is visualized below:
+![plot](dag.pdf)
